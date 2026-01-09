@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Port Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .controls {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        select, input, button {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.disconnect {
+            background: #e74c3c;
+        }
+
+        button.disconnect:hover {
+            background: #c0392b;
+        }
+
+        button.clear {
+            background: #95a5a6;
+        }
+
+        button.clear:hover {
+            background: #7f8c8d;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status.disconnected {
+            background: #fee;
+            color: #c0392b;
+        }
+
+        .status.connected {
+            background: #efe;
+            color: #27ae60;
+        }
+
+        .terminal {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 16px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .terminal::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .terminal .timestamp {
+            color: #808080;
+            margin-right: 8px;
+        }
+
+        .terminal .received {
+            color: #4ec9b0;
+        }
+
+        .terminal .sent {
+            color: #ce9178;
+        }
+
+        .terminal .info {
+            color: #569cd6;
+        }
+
+        .send-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .send-group input {
+            flex: 1;
+        }
+
+        .send-group button {
+            width: 100px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ Serial Port Monitor</h1>
+            <p>Web Serial API Interface</p>
+        </div>
+
+        <div class="content">
+            <div id="warningMessage" class="warning" style="display: none;">
+                ⚠️ Browser Anda tidak mendukung Web Serial API. Gunakan Chrome, Edge, atau Opera versi terbaru.
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="baudrate">Baud Rate</label>
+                    <select id="baudrate">
+                        <option value="300">300</option>
+                        <option value="1200">1200</option>
+                        <option value="2400">2400</option>
+                        <option value="4800">4800</option>
+                        <option value="9600" selected>9600</option>
+                        <option value="19200">19200</option>
+                        <option value="38400">38400</option>
+                        <option value="57600">57600</option>
+                        <option value="115200">115200</option>
+                        <option value="230400">230400</option>
+                        <option value="460800">460800</option>
+                        <option value="921600">921600</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button id="connectBtn">Hubungkan</button>
+                    <button id="disconnectBtn" class="disconnect" disabled>Putuskan</button>
+                </div>
+            </div>
+
+            <div id="status" class="status disconnected">
+                ● Tidak Terhubung
+            </div>
+
+            <div id="terminal" class="terminal"></div>
+
+            <div class="send-group">
+                <input type="text" id="sendInput" placeholder="Ketik data untuk dikirim..." disabled>
+                <button id="sendBtn" disabled>Kirim</button>
+                <button id="clearBtn" class="clear">Bersihkan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfigurasi Spreadsheet
+        const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbyah83KJKDsl2UjYwp6_JCouMuO780nahc6lHmrHdb3yjsr4_0MnXtriIlSUGtOQhSn/exec";
+
+        let port;
+        let reader;
+        let writer;
+        let keepReading = false;
+
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const baudrateSelect = document.getElementById('baudrate');
+        const sendInput = document.getElementById('sendInput');
+        const terminal = document.getElementById('terminal');
+        const status = document.getElementById('status');
+        const warningMessage = document.getElementById('warningMessage');
+
+        // Cek dukungan Web Serial API
+        if (!('serial' in navigator)) {
+            warningMessage.style.display = 'block';
+            connectBtn.disabled = true;
+        }
+
+        function addToTerminal(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('id-ID');
+            const line = document.createElement('div');
+            line.innerHTML = `<span class="timestamp">[${timestamp}]</span><span class="${type}">${message}</span>`;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Fungsi untuk mengirim data ke Google Spreadsheet
+        async function sendToSpreadsheet(data) {
+            try {
+                const timestamp = new Date().toISOString();
+                const payload = {
+                    timestamp: timestamp,
+                    data: data
+                };
+
+                const response = await fetch(SPREADSHEET_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                addToTerminal(`📊 Data dikirim ke spreadsheet`, 'info');
+                return true;
+            } catch (error) {
+                addToTerminal(`❌ Error kirim ke spreadsheet: ${error.message}`, 'info');
+                console.error('Spreadsheet error:', error);
+                return false;
+            }
+        }
+
+        function updateStatus(connected) {
+            if (connected) {
+                status.className = 'status connected';
+                status.textContent = '● Terhubung';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                sendBtn.disabled = false;
+                sendInput.disabled = false;
+                baudrateSelect.disabled = true;
+            } else {
+                status.className = 'status disconnected';
+                status.textContent = '● Tidak Terhubung';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                sendBtn.disabled = true;
+                sendInput.disabled = true;
+                baudrateSelect.disabled = false;
+            }
+        }
+
+        async function connectSerial() {
+            try {
+                const baudRate = parseInt(baudrateSelect.value);
+                
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate });
+
+                addToTerminal(`Terhubung dengan baud rate: ${baudRate}`, 'info');
+
+                const textDecoder = new TextDecoderStream();
+                const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+                reader = textDecoder.readable.getReader();
+
+                const textEncoder = new TextEncoderStream();
+                const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+                writer = textEncoder.writable.getWriter();
+
+                updateStatus(true);
+
+                keepReading = true;
+                readLoop();
+
+            } catch (error) {
+                addToTerminal(`Error: ${error.message}`, 'info');
+                console.error('Error:', error);
+            }
+        }
+
+        async function readLoop() {
+            while (port.readable && keepReading) {
+                try {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        break;
+                    }
+                    if (value) {
+                        addToTerminal(`RX: ${value}`, 'received');
+                        // Kirim data ke spreadsheet
+                        await sendToSpreadsheet(value);
+                    }
+                } catch (error) {
+                    addToTerminal(`Error membaca: ${error.message}`, 'info');
+                    break;
+                }
+            }
+        }
+
+        async function disconnectSerial() {
+            try {
+                keepReading = false;
+                
+                if (reader) {
+                    await reader.cancel();
+                    reader.releaseLock();
+                }
+                
+                if (writer) {
+                    await writer.close();
+                }
+                
+                if (port) {
+                    await port.close();
+                }
+
+                addToTerminal('Koneksi diputus', 'info');
+                updateStatus(false);
+
+            } catch (error) {
+                addToTerminal(`Error saat memutus: ${error.message}`, 'info');
+                console.error('Error:', error);
+            }
+        }
+
+        async function sendData() {
+            const data = sendInput.value;
+            if (!data) return;
+
+            try {
+                await writer.write(data + '\n');
+                addToTerminal(`TX: ${data}`, 'sent');
+                sendInput.value = '';
+            } catch (error) {
+                addToTerminal(`Error mengirim: ${error.message}`, 'info');
+            }
+        }
+
+        function clearTerminal() {
+            terminal.innerHTML = '';
+            addToTerminal('Terminal dibersihkan', 'info');
+        }
+
+        connectBtn.addEventListener('click', connectSerial);
+        disconnectBtn.addEventListener('click', disconnectSerial);
+        sendBtn.addEventListener('click', sendData);
+        clearBtn.addEventListener('click', clearTerminal);
+
+        sendInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendData();
+            }
+        });
+
+        // Pesan awal
+        addToTerminal('Serial Port Monitor siap digunakan', 'info');
+        addToTerminal('Klik "Hubungkan" untuk memilih port serial', 'info');
+    </script>
+</body>
+</html>
