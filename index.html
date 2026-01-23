@@ -210,6 +210,26 @@
             font-size: 13px;
         }
 
+        .queue-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .queue-info .badge {
+            background: #1565c0;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
         @media (max-width: 600px) {
             .button-group {
                 grid-template-columns: 1fr;
@@ -255,7 +275,12 @@
             </div>
 
             <div id="status" class="status disconnected">
-                ● Tidak Terhubung
+                ⚫ Tidak Terhubung
+            </div>
+
+            <div id="queueInfo" class="queue-info" style="display: none;">
+                <span>📊 Queue Pengiriman Spreadsheet</span>
+                <span class="badge" id="queueCount">0</span>
             </div>
 
             <div id="terminal" class="terminal"></div>
@@ -277,6 +302,14 @@
         let writer;
         let keepReading = false;
 
+        // Queue untuk menyimpan data yang belum terkirim
+        let dataQueue = [];
+        let isSending = false;
+        let sendAttempts = 0;
+        const MAX_RETRIES = 3;
+        const RETRY_DELAY = 2000; // 2 detik
+        const SEND_DELAY = 100; // Delay antar pengiriman
+
         const connectBtn = document.getElementById('connectBtn');
         const disconnectBtn = document.getElementById('disconnectBtn');
         const sendBtn = document.getElementById('sendBtn');
@@ -286,6 +319,8 @@
         const terminal = document.getElementById('terminal');
         const status = document.getElementById('status');
         const warningMessage = document.getElementById('warningMessage');
+        const queueInfo = document.getElementById('queueInfo');
+        const queueCount = document.getElementById('queueCount');
 
         // Cek dukungan Web Serial API
         if (!('serial' in navigator)) {
@@ -301,37 +336,89 @@
             terminal.scrollTop = terminal.scrollHeight;
         }
 
+        function updateQueueDisplay() {
+            queueCount.textContent = dataQueue.length;
+            if (dataQueue.length > 0) {
+                queueInfo.style.display = 'flex';
+            } else {
+                queueInfo.style.display = 'none';
+            }
+        }
+
         // Fungsi untuk mengirim data ke Google Spreadsheet
         async function sendToSpreadsheet(data) {
-            try {
-                const timestamp = new Date().toISOString();
-                const payload = {
-                    timestamp: timestamp,
-                    data: data
-                };
+            const timestamp = new Date().toISOString();
+            const payload = {
+                timestamp: timestamp,
+                data: data
+            };
 
+            // Tambahkan ke queue
+            dataQueue.push(payload);
+            updateQueueDisplay();
+            
+            // Proses queue jika belum sedang mengirim
+            if (!isSending) {
+                processQueue();
+            }
+        }
+
+        // Fungsi untuk memproses queue pengiriman
+        async function processQueue() {
+            if (dataQueue.length === 0) {
+                isSending = false;
+                updateQueueDisplay();
+                return;
+            }
+
+            isSending = true;
+            const payload = dataQueue[0];
+
+            try {
                 const response = await fetch(SPREADSHEET_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain',
                     },
                     body: JSON.stringify(payload)
                 });
 
-                addToTerminal(`📊 Data dikirim ke spreadsheet`, 'info');
-                return true;
+                // Cek status response
+                if (response.ok || response.type === 'opaque') {
+                    // Berhasil terkirim
+                    dataQueue.shift(); // Hapus dari queue
+                    sendAttempts = 0;
+                    updateQueueDisplay();
+                    addToTerminal(`📊 Data terkirim (Queue: ${dataQueue.length})`, 'info');
+                    
+                    // Proses item berikutnya
+                    setTimeout(() => processQueue(), SEND_DELAY);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
             } catch (error) {
-                addToTerminal(`❌ Error kirim ke spreadsheet: ${error.message}`, 'info');
+                sendAttempts++;
+                
+                if (sendAttempts >= MAX_RETRIES) {
+                    addToTerminal(`❌ Gagal kirim setelah ${MAX_RETRIES}x percobaan`, 'info');
+                    dataQueue.shift(); // Hapus data yang gagal
+                    sendAttempts = 0;
+                    updateQueueDisplay();
+                    setTimeout(() => processQueue(), SEND_DELAY);
+                } else {
+                    addToTerminal(`⚠️ Retry ${sendAttempts}/${MAX_RETRIES} (Queue: ${dataQueue.length})`, 'info');
+                    setTimeout(() => processQueue(), RETRY_DELAY);
+                }
+                
                 console.error('Spreadsheet error:', error);
-                return false;
             }
         }
 
         function updateStatus(connected) {
             if (connected) {
                 status.className = 'status connected';
-                status.textContent = '● Terhubung';
+                status.textContent = '🟢 Terhubung';
                 connectBtn.disabled = true;
                 disconnectBtn.disabled = false;
                 sendBtn.disabled = false;
@@ -339,7 +426,7 @@
                 baudrateSelect.disabled = true;
             } else {
                 status.className = 'status disconnected';
-                status.textContent = '● Tidak Terhubung';
+                status.textContent = '⚫ Tidak Terhubung';
                 connectBtn.disabled = false;
                 disconnectBtn.disabled = true;
                 sendBtn.disabled = true;
@@ -355,7 +442,7 @@
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate });
 
-                addToTerminal(`Terhubung dengan baud rate: ${baudRate}`, 'info');
+                addToTerminal(`✅ Terhubung dengan baud rate: ${baudRate}`, 'info');
 
                 const textDecoder = new TextDecoderStream();
                 const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
@@ -371,7 +458,7 @@
                 readLoop();
 
             } catch (error) {
-                addToTerminal(`Error: ${error.message}`, 'info');
+                addToTerminal(`❌ Error: ${error.message}`, 'info');
                 console.error('Error:', error);
             }
         }
@@ -385,11 +472,13 @@
                     }
                     if (value) {
                         addToTerminal(`RX: ${value}`, 'received');
-                        // Kirim data ke spreadsheet
-                        await sendToSpreadsheet(value);
+                        // Kirim data ke spreadsheet (non-blocking)
+                        sendToSpreadsheet(value).catch(err => {
+                            console.error('Queue error:', err);
+                        });
                     }
                 } catch (error) {
-                    addToTerminal(`Error membaca: ${error.message}`, 'info');
+                    addToTerminal(`❌ Error membaca: ${error.message}`, 'info');
                     break;
                 }
             }
@@ -412,11 +501,11 @@
                     await port.close();
                 }
 
-                addToTerminal('Koneksi diputus', 'info');
+                addToTerminal('🔌 Koneksi diputus', 'info');
                 updateStatus(false);
 
             } catch (error) {
-                addToTerminal(`Error saat memutus: ${error.message}`, 'info');
+                addToTerminal(`❌ Error saat memutus: ${error.message}`, 'info');
                 console.error('Error:', error);
             }
         }
@@ -430,13 +519,13 @@
                 addToTerminal(`TX: ${data}`, 'sent');
                 sendInput.value = '';
             } catch (error) {
-                addToTerminal(`Error mengirim: ${error.message}`, 'info');
+                addToTerminal(`❌ Error mengirim: ${error.message}`, 'info');
             }
         }
 
         function clearTerminal() {
             terminal.innerHTML = '';
-            addToTerminal('Terminal dibersihkan', 'info');
+            addToTerminal('🧹 Terminal dibersihkan', 'info');
         }
 
         connectBtn.addEventListener('click', connectSerial);
@@ -451,8 +540,8 @@
         });
 
         // Pesan awal
-        addToTerminal('Serial Port Monitor siap digunakan', 'info');
-        addToTerminal('Klik "Hubungkan" untuk memilih port serial', 'info');
+        addToTerminal('🚀 Serial Port Monitor siap digunakan', 'info');
+        addToTerminal('📌 Klik "Hubungkan" untuk memilih port serial', 'info');
     </script>
 </body>
 </html>
