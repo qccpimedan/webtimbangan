@@ -6,11 +6,11 @@
     <title>Serial Port Monitor</title>
     <script>
         partytown = {
-            lib: './~partytown/',
+            lib: './partytown/',
             forward: ['sendPayloadToSpreadsheet']
         };
     </script>
-    <script src="./~partytown/partytown.js"></script>
+    <script src="./partytown/partytown.js"></script>
     <style>
         * {
             margin: 0;
@@ -350,7 +350,7 @@
         }
 
         function addToTerminal(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString('id-ID');
+            const timestamp = new Date().toLocaleTimeString('id-ID', { hour12: false });
             const line = document.createElement('div');
             line.innerHTML = `<span class="timestamp">[${timestamp}]</span><span class="${type}">${message}</span>`;
             terminal.appendChild(line);
@@ -366,9 +366,19 @@
             }
         }
 
+        function formatDateTimeLocal(date) {
+            const yyyy = String(date.getFullYear());
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const hh = String(date.getHours()).padStart(2, '0');
+            const mi = String(date.getMinutes()).padStart(2, '0');
+            const ss = String(date.getSeconds()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+        }
+
         // Fungsi untuk mengirim data ke Google Spreadsheet
         async function sendToSpreadsheet(data) {
-            const timestamp = new Date().toISOString();
+            const timestamp = formatDateTimeLocal(new Date());
             const payload = {
                 timestamp: timestamp,
                 data: data
