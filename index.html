@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Serial Port Monitor</title>
+    <script>
+        partytown = {
+            lib: '/~partytown/',
+            forward: ['sendPayloadToSpreadsheet']
+        };
+    </script>
+    <script src="/~partytown/partytown.js"></script>
     <style>
         * {
             margin: 0;
@@ -293,6 +300,20 @@
         </div>
     </div>
 
+    <script type="text/partytown">
+        window.sendPayloadToSpreadsheet = async function (url, payload) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain',
+                },
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            return { ok: response.ok, type: response.type };
+        };
+    </script>
+
     <script>
         // Konfigurasi Spreadsheet
         const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbyah83KJKDsl2UjYwp6_JCouMuO780nahc6lHmrHdb3yjsr4_0MnXtriIlSUGtOQhSn/exec";
@@ -375,16 +396,23 @@
             const payload = dataQueue[0];
 
             try {
-                const response = await fetch(SPREADSHEET_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                    },
-                    body: JSON.stringify(payload)
-                });
+                let result;
+                if (typeof window.sendPayloadToSpreadsheet === 'function') {
+                    result = await window.sendPayloadToSpreadsheet(SPREADSHEET_URL, payload);
+                } else {
+                    const response = await fetch(SPREADSHEET_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain',
+                        },
+                        mode: 'no-cors',
+                        body: JSON.stringify(payload)
+                    });
+                    result = { ok: response.ok, type: response.type };
+                }
 
                 // Cek status response
-                if (response.ok || response.type === 'opaque') {
+                if (result.ok || result.type === 'opaque') {
                     // Berhasil terkirim
                     dataQueue.shift(); // Hapus dari queue
                     sendAttempts = 0;
@@ -394,7 +422,7 @@
                     // Proses item berikutnya
                     setTimeout(() => processQueue(), SEND_DELAY);
                 } else {
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error('HTTP error');
                 }
 
             } catch (error) {
