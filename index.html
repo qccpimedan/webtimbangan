@@ -346,7 +346,9 @@
         // Cek dukungan Web Serial API
         if (!('serial' in navigator)) {
             warningMessage.style.display = 'block';
-            connectBtn.disabled = true;
+            if (connectBtn) {
+                connectBtn.disabled = true;
+            }
         }
 
         function addToTerminal(message, type = 'info') {
@@ -457,19 +459,19 @@
             if (connected) {
                 status.className = 'status connected';
                 status.textContent = '🟢 Terhubung';
-                connectBtn.disabled = true;
-                disconnectBtn.disabled = false;
-                sendBtn.disabled = false;
-                sendInput.disabled = false;
-                baudrateSelect.disabled = true;
+                if (connectBtn) connectBtn.disabled = true;
+                if (disconnectBtn) disconnectBtn.disabled = false;
+                if (sendBtn) sendBtn.disabled = false;
+                if (sendInput) sendInput.disabled = false;
+                if (baudrateSelect) baudrateSelect.disabled = true;
             } else {
                 status.className = 'status disconnected';
                 status.textContent = '⚫ Tidak Terhubung';
-                connectBtn.disabled = false;
-                disconnectBtn.disabled = true;
-                sendBtn.disabled = true;
-                sendInput.disabled = true;
-                baudrateSelect.disabled = false;
+                if (connectBtn) connectBtn.disabled = false;
+                if (disconnectBtn) disconnectBtn.disabled = true;
+                if (sendBtn) sendBtn.disabled = true;
+                if (sendInput) sendInput.disabled = true;
+                if (baudrateSelect) baudrateSelect.disabled = false;
             }
         }
 
@@ -549,6 +551,9 @@
         }
 
         async function sendData() {
+            if (!sendInput) return;
+            if (!writer) return;
+
             const data = sendInput.value;
             if (!data) return;
 
@@ -566,16 +571,18 @@
             addToTerminal('🧹 Terminal dibersihkan', 'info');
         }
 
-        connectBtn.addEventListener('click', connectSerial);
-        disconnectBtn.addEventListener('click', disconnectSerial);
-        sendBtn.addEventListener('click', sendData);
-        clearBtn.addEventListener('click', clearTerminal);
+        if (connectBtn) connectBtn.addEventListener('click', connectSerial);
+        if (disconnectBtn) disconnectBtn.addEventListener('click', disconnectSerial);
+        if (sendBtn) sendBtn.addEventListener('click', sendData);
+        if (clearBtn) clearBtn.addEventListener('click', clearTerminal);
 
-        sendInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendData();
-            }
-        });
+        if (sendInput) {
+            sendInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendData();
+                }
+            });
+        }
 
         // Pesan awal
         addToTerminal('🚀 Serial Port Monitor siap digunakan', 'info');
