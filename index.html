@@ -328,6 +328,8 @@
         let lastRxEmitAt = 0;
         const RX_MAX_EMIT_INTERVAL = 500;
         const RX_MAX_BUFFER_LEN = 256;
+        let rxLastByteAt = 0;
+        let rxNoDataTimer;
 
         // Queue untuk menyimpan data yang belum terkirim
         let dataQueue = [];
@@ -382,6 +384,19 @@
             const mi = String(date.getMinutes()).padStart(2, '0');
             const ss = String(date.getSeconds()).padStart(2, '0');
             return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+        }
+
+        function rxDebugString(str) {
+            let out = '';
+            for (let i = 0; i < str.length; i++) {
+                const code = str.charCodeAt(i);
+                if (code === 9) out += '\\t';
+                else if (code === 10) out += '\\n';
+                else if (code === 13) out += '\\r';
+                else if (code < 32 || code === 127) out += `\\x${code.toString(16).padStart(2, '0')}`;
+                else out += str[i];
+            }
+            return out;
         }
 
         // Fungsi untuk mengirim data ke Google Spreadsheet
@@ -512,10 +527,21 @@
                 keepReading = true;
                 rxBuffer = '';
                 lastRxEmitAt = Date.now();
+                rxLastByteAt = 0;
                 if (rxFlushTimer) {
                     clearTimeout(rxFlushTimer);
                     rxFlushTimer = undefined;
                 }
+                if (rxNoDataTimer) {
+                    clearTimeout(rxNoDataTimer);
+                    rxNoDataTimer = undefined;
+                }
+                rxNoDataTimer = setTimeout(() => {
+                    if (!keepReading) return;
+                    if (rxLastByteAt === 0) {
+                        addToTerminal('⚠️ Tidak ada data masuk (RX) setelah terhubung. Kemungkinan: baudrate/parity salah, timbangan tidak stream otomatis, atau butuh command.', 'info');
+                    }
+                }, 5000);
                 addToTerminal('ℹ️ Mulai membaca data serial...', 'info');
                 readLoop();
 
@@ -537,6 +563,8 @@
                         continue;
                     }
 
+                    rxLastByteAt = Date.now();
+
                     rxBuffer += value;
 
                     const now = Date.now();
@@ -547,9 +575,14 @@
                         clearTimeout(rxFlushTimer);
                     }
                     rxFlushTimer = setTimeout(() => {
-                        const line = String(rxBuffer).trim();
+                        const rawLine = String(rxBuffer);
+                        const line = rawLine.trim();
                         rxBuffer = '';
-                        if (!line) return;
+
+                        if (!line) {
+                            addToTerminal(`RX(raw): ${rxDebugString(rawLine)}`, 'received');
+                            return;
+                        }
 
                         lastRxEmitAt = Date.now();
 
@@ -563,8 +596,12 @@
                     rxBuffer = parts.pop() ?? '';
 
                     for (const raw of parts) {
-                        const line = String(raw).trim();
-                        if (!line) continue;
+                        const rawLine = String(raw);
+                        const line = rawLine.trim();
+                        if (!line) {
+                            addToTerminal(`RX(raw): ${rxDebugString(rawLine)}`, 'received');
+                            continue;
+                        }
 
                         addToTerminal(`RX: ${line}`, 'received');
                         // Kirim data ke spreadsheet (non-blocking)
@@ -576,15 +613,21 @@
                     }
 
                     if ((shouldEmitBySize || shouldEmitByTime) && rxBuffer) {
-                        const line = String(rxBuffer).trim();
+                        const rawLine = String(rxBuffer);
+                        const line = rawLine.trim();
                         rxBuffer = '';
-                        if (line) {
-                            addToTerminal(`RX: ${line}`, 'received');
-                            sendToSpreadsheet(line).catch(err => {
-                                console.error('Queue error:', err);
-                            });
-                            lastRxEmitAt = now;
+
+                        if (!line) {
+                            addToTerminal(`RX(raw): ${rxDebugString(rawLine)}`, 'received');
+                            return;
                         }
+
+                        lastRxEmitAt = now;
+
+                        addToTerminal(`RX: ${line}`, 'received');
+                        sendToSpreadsheet(line).catch(err => {
+                            console.error('Queue error:', err);
+                        });
                     }
                 } catch (error) {
                     addToTerminal(`❌ Error membaca: ${error.message}`, 'info');
@@ -604,6 +647,11 @@
                 if (rxFlushTimer) {
                     clearTimeout(rxFlushTimer);
                     rxFlushTimer = undefined;
+                }
+
+                if (rxNoDataTimer) {
+                    clearTimeout(rxNoDataTimer);
+                    rxNoDataTimer = undefined;
                 }
                 
                 if (reader) {
