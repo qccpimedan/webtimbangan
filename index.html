@@ -325,6 +325,9 @@
         let rxBuffer = '';
         let rxFlushTimer;
         const RX_FLUSH_DELAY = 200;
+        let lastRxEmitAt = 0;
+        const RX_MAX_EMIT_INTERVAL = 500;
+        const RX_MAX_BUFFER_LEN = 256;
 
         // Queue untuk menyimpan data yang belum terkirim
         let dataQueue = [];
@@ -483,7 +486,16 @@
                 const baudRate = parseInt(baudrateSelect.value);
                 
                 port = await navigator.serial.requestPort();
-                await port.open({ baudRate });
+                await port.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+
+                try {
+                    if (typeof port.setSignals === 'function') {
+                        await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+                        addToTerminal('ℹ️ DTR/RTS diaktifkan', 'info');
+                    }
+                } catch (e) {
+                    addToTerminal(`⚠️ Tidak bisa set DTR/RTS: ${e?.message ?? e}`, 'info');
+                }
 
                 addToTerminal(`✅ Terhubung dengan baud rate: ${baudRate}`, 'info');
 
@@ -499,10 +511,12 @@
 
                 keepReading = true;
                 rxBuffer = '';
+                lastRxEmitAt = Date.now();
                 if (rxFlushTimer) {
                     clearTimeout(rxFlushTimer);
                     rxFlushTimer = undefined;
                 }
+                addToTerminal('ℹ️ Mulai membaca data serial...', 'info');
                 readLoop();
 
             } catch (error) {
@@ -516,6 +530,7 @@
                 try {
                     const { value, done } = await reader.read();
                     if (done) {
+                        addToTerminal('⚠️ Reader selesai (done=true)', 'info');
                         break;
                     }
                     if (!value) {
@@ -524,6 +539,10 @@
 
                     rxBuffer += value;
 
+                    const now = Date.now();
+                    const shouldEmitBySize = rxBuffer.length >= RX_MAX_BUFFER_LEN;
+                    const shouldEmitByTime = now - lastRxEmitAt >= RX_MAX_EMIT_INTERVAL;
+
                     if (rxFlushTimer) {
                         clearTimeout(rxFlushTimer);
                     }
@@ -531,6 +550,8 @@
                         const line = String(rxBuffer).trim();
                         rxBuffer = '';
                         if (!line) return;
+
+                        lastRxEmitAt = Date.now();
 
                         addToTerminal(`RX: ${line}`, 'received');
                         sendToSpreadsheet(line).catch(err => {
@@ -550,11 +571,29 @@
                         sendToSpreadsheet(line).catch(err => {
                             console.error('Queue error:', err);
                         });
+
+                        lastRxEmitAt = now;
+                    }
+
+                    if ((shouldEmitBySize || shouldEmitByTime) && rxBuffer) {
+                        const line = String(rxBuffer).trim();
+                        rxBuffer = '';
+                        if (line) {
+                            addToTerminal(`RX: ${line}`, 'received');
+                            sendToSpreadsheet(line).catch(err => {
+                                console.error('Queue error:', err);
+                            });
+                            lastRxEmitAt = now;
+                        }
                     }
                 } catch (error) {
                     addToTerminal(`❌ Error membaca: ${error.message}`, 'info');
                     break;
                 }
+            }
+
+            if (!port?.readable) {
+                addToTerminal('⚠️ Port tidak readable (port.readable kosong)', 'info');
             }
         }
 
