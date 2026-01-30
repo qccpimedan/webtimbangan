@@ -322,6 +322,9 @@
         let reader;
         let writer;
         let keepReading = false;
+        let rxBuffer = '';
+        let rxFlushTimer;
+        const RX_FLUSH_DELAY = 200;
 
         // Queue untuk menyimpan data yang belum terkirim
         let dataQueue = [];
@@ -495,6 +498,11 @@
                 updateStatus(true);
 
                 keepReading = true;
+                rxBuffer = '';
+                if (rxFlushTimer) {
+                    clearTimeout(rxFlushTimer);
+                    rxFlushTimer = undefined;
+                }
                 readLoop();
 
             } catch (error) {
@@ -510,10 +518,36 @@
                     if (done) {
                         break;
                     }
-                    if (value) {
-                        addToTerminal(`RX: ${value}`, 'received');
+                    if (!value) {
+                        continue;
+                    }
+
+                    rxBuffer += value;
+
+                    if (rxFlushTimer) {
+                        clearTimeout(rxFlushTimer);
+                    }
+                    rxFlushTimer = setTimeout(() => {
+                        const line = String(rxBuffer).trim();
+                        rxBuffer = '';
+                        if (!line) return;
+
+                        addToTerminal(`RX: ${line}`, 'received');
+                        sendToSpreadsheet(line).catch(err => {
+                            console.error('Queue error:', err);
+                        });
+                    }, RX_FLUSH_DELAY);
+
+                    const parts = rxBuffer.split(/\r\n|\n|\r/);
+                    rxBuffer = parts.pop() ?? '';
+
+                    for (const raw of parts) {
+                        const line = String(raw).trim();
+                        if (!line) continue;
+
+                        addToTerminal(`RX: ${line}`, 'received');
                         // Kirim data ke spreadsheet (non-blocking)
-                        sendToSpreadsheet(value).catch(err => {
+                        sendToSpreadsheet(line).catch(err => {
                             console.error('Queue error:', err);
                         });
                     }
@@ -527,6 +561,11 @@
         async function disconnectSerial() {
             try {
                 keepReading = false;
+
+                if (rxFlushTimer) {
+                    clearTimeout(rxFlushTimer);
+                    rxFlushTimer = undefined;
+                }
                 
                 if (reader) {
                     await reader.cancel();
