@@ -3,260 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serial Port Monitor</title>
-    <script>
-        partytown = {
-            lib: './partytown/',
-            forward: ['sendPayloadToSpreadsheet']
-        };
-    </script>
-    <script src="./partytown/partytown.js"></script>
+    <title>Monitor Timbangan Digital</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
+            color: #e0e0e0;
         }
 
-        .container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 800px;
-            width: 100%;
-            overflow: hidden;
-        }
+        .app-wrapper { max-width: 1100px; margin: 0 auto; }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 24px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-
-        .content {
-            padding: 24px;
-        }
-
-        .controls {
-            display: grid;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .control-group {
+            padding: 24px 32px;
+            border-radius: 16px 16px 0 0;
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            gap: 16px;
+        }
+        .header-icon { font-size: 36px; }
+        .header h1 { font-size: 22px; margin-bottom: 4px; }
+        .header p { opacity: 0.85; font-size: 13px; }
+
+        .main-card {
+            background: #1e2a3a;
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
         }
 
-        label {
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
+        .section {
+            padding: 20px 24px;
+            border-bottom: 1px solid #2a3a4a;
         }
 
-        select, input, button {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #667eea;
+            margin-bottom: 14px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 6px; }
+        .control-group label { font-size: 12px; color: #aaa; font-weight: 600; }
+
+        select, input[type="text"] {
+            padding: 10px 14px;
+            background: #0f1923;
+            border: 1.5px solid #2a3a4a;
             border-radius: 8px;
+            color: #e0e0e0;
             font-size: 14px;
-            transition: all 0.3s;
+            transition: border-color 0.2s;
         }
-
-        select:focus, input:focus {
+        select:focus, input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        button {
-            background: #667eea;
-            color: white;
+        .btn {
+            padding: 10px 20px;
             border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            letter-spacing: 0.4px;
         }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-danger  { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+        .btn-success { background: linear-gradient(135deg, #27ae60, #219a52); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #f39c12, #d68910); color: white; }
+        .btn-gray    { background: #2a3a4a; color: #ccc; }
 
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        button.disconnect {
-            background: #e74c3c;
-        }
-
-        button.disconnect:hover {
-            background: #c0392b;
-        }
-
-        button.clear {
-            background: #95a5a6;
-        }
-
-        button.clear:hover {
-            background: #7f8c8d;
-        }
-
-        .status {
-            padding: 12px;
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
             border-radius: 8px;
-            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .status-bar.disconnected { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+        .status-bar.connected    { background: rgba(39,174,96,0.15);  color: #27ae60; border: 1px solid rgba(39,174,96,0.3); }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+
+        .warning-box {
+            background: rgba(243,156,18,0.12);
+            border: 1px solid rgba(243,156,18,0.3);
+            color: #f39c12;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .queue-badge {
+            background: rgba(102,126,234,0.15);
+            border: 1px solid rgba(102,126,234,0.3);
+            color: #667eea;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 600;
-            text-align: center;
+            display: none;
         }
 
-        .status.disconnected {
-            background: #fee;
-            color: #c0392b;
-        }
-
-        .status.connected {
-            background: #efe;
-            color: #27ae60;
-        }
-
+        /* ─── Terminal ─── */
         .terminal {
-            background: #1e1e1e;
-            color: #d4d4d4;
+            background: #0d1117;
+            border: 1px solid #2a3a4a;
             border-radius: 8px;
-            padding: 16px;
-            height: 300px;
+            padding: 14px;
+            height: 180px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
-            font-size: 13px;
-            margin-bottom: 16px;
-            line-height: 1.6;
+            font-size: 12px;
+            line-height: 1.7;
         }
+        .terminal::-webkit-scrollbar { width: 6px; }
+        .terminal::-webkit-scrollbar-track { background: #1a1a2e; }
+        .terminal::-webkit-scrollbar-thumb { background: #3a4a5a; border-radius: 3px; }
+        .ts  { color: #555; margin-right: 6px; }
+        .rx  { color: #4ec9b0; }
+        .inf { color: #569cd6; }
+        .snt { color: #ce9178; }
 
-        .terminal::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .terminal::-webkit-scrollbar-track {
-            background: #2d2d2d;
-            border-radius: 4px;
-        }
-
-        .terminal::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
-        }
-
-        .terminal .timestamp {
-            color: #808080;
-            margin-right: 8px;
-        }
-
-        .terminal .received {
-            color: #4ec9b0;
-        }
-
-        .terminal .sent {
-            color: #ce9178;
-        }
-
-        .terminal .info {
-            color: #569cd6;
-        }
-
-        .send-group {
+        /* ─── Stats bar ─── */
+        .stats-row {
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
         }
-
-        .send-group input {
+        .stat-card {
             flex: 1;
+            min-width: 120px;
+            background: #0f1923;
+            border: 1px solid #2a3a4a;
+            border-radius: 10px;
+            padding: 14px 18px;
+            text-align: center;
         }
+        .stat-card .val { font-size: 28px; font-weight: 800; color: #667eea; }
+        .stat-card .lbl { font-size: 11px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
+        .stat-card.highlight .val { color: #27ae60; }
 
-        .send-group button {
-            width: 100px;
-        }
-
-        .warning {
-            background: #fff3cd;
-            color: #856404;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-
-        .queue-info {
-            background: #e3f2fd;
-            color: #1565c0;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 12px;
+        /* ─── Table ─── */
+        .table-toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
         }
+        .table-toolbar-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-        .queue-info .badge {
-            background: #1565c0;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: 600;
+        .data-table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #2a3a4a;
+            max-height: 400px;
+            overflow-y: auto;
         }
+        .data-table-wrapper::-webkit-scrollbar { width: 6px; }
+        .data-table-wrapper::-webkit-scrollbar-track { background: #1a1a2e; }
+        .data-table-wrapper::-webkit-scrollbar-thumb { background: #3a4a5a; border-radius: 3px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        thead th {
+            background: #0f1923;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #667eea;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        tbody tr { border-bottom: 1px solid #1e2a3a; transition: background 0.15s; }
+        tbody tr:hover { background: rgba(102,126,234,0.06); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody td { padding: 11px 16px; color: #d0d8e0; }
+        tbody td.no-col { color: #666; width: 50px; }
+        tbody td.time-col { color: #888; white-space: nowrap; }
+        tbody td.data-col { color: #4ec9b0; font-family: 'Courier New', monospace; font-weight: 600; }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: #444;
+        }
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
 
         @media (max-width: 600px) {
-            .button-group {
-                grid-template-columns: 1fr;
-            }
+            .controls-row { flex-direction: column; }
+            .btn { width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚡ Serial Port Monitor</h1>
-            <p>Web Serial API Interface</p>
+<div class="app-wrapper">
+    <div class="header">
+        <div class="header-icon">⚖️</div>
+        <div>
+            <h1>Monitor Timbangan Digital</h1>
+            <p>Serial Port Reader — Data disimpan lokal &amp; dapat diekspor ke Excel</p>
         </div>
+    </div>
 
-        <div class="content">
-            <div id="warningMessage" class="warning" style="display: none;">
-                ⚠️ Browser Anda tidak mendukung Web Serial API. Gunakan Chrome, Edge, atau Opera versi terbaru.
+    <div class="main-card">
+
+        <!-- KONEKSI -->
+        <div class="section">
+            <div class="section-title">⚙️ Konfigurasi Koneksi</div>
+            <div id="warningBox" class="warning-box">
+                ⚠️ Browser tidak mendukung Web Serial API. Gunakan Chrome, Edge, atau Opera versi terbaru.
             </div>
-
-            <div class="controls">
+            <div class="controls-row">
                 <div class="control-group">
                     <label for="baudrate">Baud Rate</label>
                     <select id="baudrate">
@@ -270,449 +262,408 @@
                         <option value="57600">57600</option>
                         <option value="115200">115200</option>
                         <option value="230400">230400</option>
-                        <option value="460800">460800</option>
-                        <option value="921600">921600</option>
                     </select>
                 </div>
+                <button id="connectBtn" class="btn btn-primary">🔌 Hubungkan</button>
+                <button id="disconnectBtn" class="btn btn-danger" disabled>⛔ Putuskan</button>
+                <div id="statusBar" class="status-bar disconnected">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Tidak Terhubung</span>
+                </div>
+                <div id="queueBadge" class="queue-badge">📤 Queue: <span id="queueCount">0</span></div>
+            </div>
+        </div>
 
-                <div class="button-group">
-                    <button id="connectBtn">Hubungkan</button>
-                    <button id="disconnectBtn" class="disconnect" disabled>Putuskan</button>
+        <!-- TERMINAL -->
+        <div class="section">
+            <div class="section-title">📟 Terminal Serial</div>
+            <div id="terminal" class="terminal"></div>
+        </div>
+
+        <!-- STATISTIK -->
+        <div class="section">
+            <div class="section-title">📊 Statistik</div>
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="val" id="statTotal">0</div>
+                    <div class="lbl">Total Data</div>
+                </div>
+                <div class="stat-card highlight">
+                    <div class="val" id="statLast">—</div>
+                    <div class="lbl">Pembacaan Terakhir</div>
+                </div>
+                <div class="stat-card">
+                    <div class="val" id="statSession">0</div>
+                    <div class="lbl">Sesi Ini</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABEL DATA -->
+        <div class="section" style="border-bottom:none;">
+            <div class="table-toolbar">
+                <div class="table-toolbar-left">
+                    <div class="section-title" style="margin-bottom:0;">📋 Riwayat Data</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button id="exportBtn" class="btn btn-success">⬇️ Export Excel</button>
+                    <button id="clearDataBtn" class="btn btn-warning">🗑️ Hapus Semua</button>
                 </div>
             </div>
 
-            <div id="status" class="status disconnected">
-                ⚫ Tidak Terhubung
+            <div id="dataTableWrapper" class="data-table-wrapper">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th class="no-col">#</th>
+                            <th>Tanggal</th>
+                            <th>Waktu</th>
+                            <th>Hasil Pembacaan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <tr id="emptyRow">
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <div class="icon">📭</div>
+                                    <p>Belum ada data. Hubungkan timbangan untuk mulai merekam.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-
-            <div id="queueInfo" class="queue-info" style="display: none;">
-                <span>📊 Queue Pengiriman Spreadsheet</span>
-                <span class="badge" id="queueCount">0</span>
-            </div>
-
-            <div id="terminal" class="terminal"></div>
-
-            <!-- <div class="send-group">
-                <input type="text" id="sendInput" placeholder="Ketik data untuk dikirim..." disabled>
-                <button id="sendBtn" disabled>Kirim</button>
-                <button id="clearBtn" class="clear">Bersihkan</button>
-            </div> -->
         </div>
-    </div>
 
-    <script type="text/partytown">
-        window.sendPayloadToSpreadsheet = async function (url, payload) {
-            const response = await fetch(url, {
+    </div>
+</div>
+
+<script>
+    // ─── Config ───────────────────────────────────────────────────
+    const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbyah83KJKDsl2UjYwp6_JCouMuO780nahc6lHmrHdb3yjsr4_0MnXtriIlSUGtOQhSn/exec";
+    const STORAGE_KEY = "timbangan_data_v1";
+    const RX_FLUSH_DELAY   = 200;
+    const RX_MAX_EMIT_INTERVAL = 500;
+    const RX_MAX_BUFFER_LEN    = 256;
+    const MAX_RETRIES  = 3;
+    const RETRY_DELAY  = 2000;
+    const SEND_DELAY   = 100;
+
+    // ─── State ────────────────────────────────────────────────────
+    let port, reader, writer;
+    let keepReading = false;
+    let rxBuffer = '';
+    let rxFlushTimer, rxNoDataTimer;
+    let lastRxEmitAt = 0, rxLastByteAt = 0;
+    let dataQueue = [], isSending = false, sendAttempts = 0;
+    let sessionCount = 0;
+
+    // ─── Persistent data (localStorage) ──────────────────────────
+    let records = [];
+
+    function loadRecords() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            records = raw ? JSON.parse(raw) : [];
+        } catch { records = []; }
+    }
+
+    function saveRecords() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
+    }
+
+    // ─── DOM refs ─────────────────────────────────────────────────
+    const connectBtn    = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const baudrateSelect= document.getElementById('baudrate');
+    const terminal      = document.getElementById('terminal');
+    const statusBar     = document.getElementById('statusBar');
+    const statusText    = document.getElementById('statusText');
+    const warningBox    = document.getElementById('warningBox');
+    const queueBadge    = document.getElementById('queueBadge');
+    const queueCount    = document.getElementById('queueCount');
+    const dataTableBody = document.getElementById('dataTableBody');
+    const emptyRow      = document.getElementById('emptyRow');
+    const statTotal     = document.getElementById('statTotal');
+    const statLast      = document.getElementById('statLast');
+    const statSession   = document.getElementById('statSession');
+    const exportBtn     = document.getElementById('exportBtn');
+    const clearDataBtn  = document.getElementById('clearDataBtn');
+
+    // ─── Browser check ────────────────────────────────────────────
+    if (!('serial' in navigator)) {
+        warningBox.style.display = 'block';
+        connectBtn.disabled = true;
+    }
+
+    // ─── Terminal ─────────────────────────────────────────────────
+    function addLog(msg, type = 'inf') {
+        const ts = new Date().toLocaleTimeString('id-ID', { hour12: false });
+        const div = document.createElement('div');
+        div.innerHTML = `<span class="ts">[${ts}]</span><span class="${type}">${msg}</span>`;
+        terminal.appendChild(div);
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // ─── Stats + Table ────────────────────────────────────────────
+    function renderTable() {
+        // Remove all rows except emptyRow placeholder
+        const rows = dataTableBody.querySelectorAll('tr.data-row');
+        rows.forEach(r => r.remove());
+
+        if (records.length === 0) {
+            emptyRow.style.display = '';
+        } else {
+            emptyRow.style.display = 'none';
+            records.slice().reverse().forEach((rec, i) => {
+                const tr = document.createElement('tr');
+                tr.className = 'data-row';
+                tr.innerHTML = `
+                    <td class="no-col">${records.length - i}</td>
+                    <td class="time-col">${rec.date}</td>
+                    <td class="time-col">${rec.time}</td>
+                    <td class="data-col">${escapeHtml(rec.value)}</td>
+                `;
+                dataTableBody.appendChild(tr);
+            });
+        }
+
+        statTotal.textContent   = records.length;
+        statSession.textContent = sessionCount;
+        statLast.textContent    = records.length > 0 ? records[records.length - 1].value : '—';
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function addRecord(value) {
+        const now  = new Date();
+        const date = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+        const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        records.push({ date, time, value: value.trim() });
+        sessionCount++;
+        saveRecords();
+        renderTable();
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    // ─── Export Excel (CSV → .xlsx via SheetJS) ───────────────────
+    exportBtn.addEventListener('click', exportToExcel);
+
+    function exportToExcel() {
+        if (records.length === 0) {
+            alert('Tidak ada data untuk diekspor.');
+            return;
+        }
+
+        // Build CSV content
+        const header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
+        const rows   = records.map((r, i) => [i + 1, r.date, r.time, r.value]);
+        const csvRows = [header, ...rows].map(row =>
+            row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+        );
+        const csvContent = '\uFEFF' + csvRows.join('\r\n'); // BOM for Excel UTF-8
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const ts   = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+        a.href     = url;
+        a.download = `data_timbangan_${ts}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        addLog(`✅ Export berhasil: ${records.length} baris`, 'inf');
+    }
+
+    // ─── Clear Data ───────────────────────────────────────────────
+    clearDataBtn.addEventListener('click', () => {
+        if (!confirm(`Hapus semua ${records.length} data? Tindakan ini tidak dapat dibatalkan.`)) return;
+        records = [];
+        sessionCount = 0;
+        saveRecords();
+        renderTable();
+        addLog('🗑️ Semua data telah dihapus', 'inf');
+    });
+
+    // ─── Queue / Spreadsheet ──────────────────────────────────────
+    function updateQueueDisplay() {
+        queueCount.textContent = dataQueue.length;
+        queueBadge.style.display = dataQueue.length > 0 ? 'inline-block' : 'none';
+    }
+
+    function formatDT(d) {
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    async function sendToSpreadsheet(data) {
+        const payload = { timestamp: formatDT(new Date()), data };
+        dataQueue.push(payload);
+        updateQueueDisplay();
+        if (!isSending) processQueue();
+    }
+
+    async function processQueue() {
+        if (dataQueue.length === 0) { isSending = false; updateQueueDisplay(); return; }
+        isSending = true;
+        const payload = dataQueue[0];
+        try {
+            const resp = await fetch(SPREADSHEET_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain',
-                },
+                headers: { 'Content-Type': 'text/plain' },
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             });
-            return { ok: response.ok, type: response.type };
-        };
-    </script>
-
-    <script>
-        // Konfigurasi Spreadsheet
-        const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbyah83KJKDsl2UjYwp6_JCouMuO780nahc6lHmrHdb3yjsr4_0MnXtriIlSUGtOQhSn/exec";
-
-        let port;
-        let reader;
-        let writer;
-        let keepReading = false;
-        let rxBuffer = '';
-        let rxFlushTimer;
-        const RX_FLUSH_DELAY = 200;
-        let lastRxEmitAt = 0;
-        const RX_MAX_EMIT_INTERVAL = 500;
-        const RX_MAX_BUFFER_LEN = 256;
-        let rxLastByteAt = 0;
-        let rxNoDataTimer;
-
-        // Queue untuk menyimpan data yang belum terkirim
-        let dataQueue = [];
-        let isSending = false;
-        let sendAttempts = 0;
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY = 2000; // 2 detik
-        const SEND_DELAY = 100; // Delay antar pengiriman
-
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const sendBtn = document.getElementById('sendBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const baudrateSelect = document.getElementById('baudrate');
-        const sendInput = document.getElementById('sendInput');
-        const terminal = document.getElementById('terminal');
-        const status = document.getElementById('status');
-        const warningMessage = document.getElementById('warningMessage');
-        const queueInfo = document.getElementById('queueInfo');
-        const queueCount = document.getElementById('queueCount');
-
-        // Cek dukungan Web Serial API
-        if (!('serial' in navigator)) {
-            warningMessage.style.display = 'block';
-            if (connectBtn) {
-                connectBtn.disabled = true;
-            }
-        }
-
-        function addToTerminal(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString('id-ID', { hour12: false });
-            const line = document.createElement('div');
-            line.innerHTML = `<span class="timestamp">[${timestamp}]</span><span class="${type}">${message}</span>`;
-            terminal.appendChild(line);
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        function updateQueueDisplay() {
-            queueCount.textContent = dataQueue.length;
-            if (dataQueue.length > 0) {
-                queueInfo.style.display = 'flex';
-            } else {
-                queueInfo.style.display = 'none';
-            }
-        }
-
-        function formatDateTimeLocal(date) {
-            const yyyy = String(date.getFullYear());
-            const mm = String(date.getMonth() + 1).padStart(2, '0');
-            const dd = String(date.getDate()).padStart(2, '0');
-            const hh = String(date.getHours()).padStart(2, '0');
-            const mi = String(date.getMinutes()).padStart(2, '0');
-            const ss = String(date.getSeconds()).padStart(2, '0');
-            return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
-        }
-
-        function rxDebugString(str) {
-            let out = '';
-            for (let i = 0; i < str.length; i++) {
-                const code = str.charCodeAt(i);
-                if (code === 9) out += '\\t';
-                else if (code === 10) out += '\\n';
-                else if (code === 13) out += '\\r';
-                else if (code < 32 || code === 127) out += `\\x${code.toString(16).padStart(2, '0')}`;
-                else out += str[i];
-            }
-            return out;
-        }
-
-        // Fungsi untuk mengirim data ke Google Spreadsheet
-        async function sendToSpreadsheet(data) {
-            const timestamp = formatDateTimeLocal(new Date());
-            const payload = {
-                timestamp: timestamp,
-                data: data
-            };
-
-            // Tambahkan ke queue
-            dataQueue.push(payload);
+            dataQueue.shift();
+            sendAttempts = 0;
             updateQueueDisplay();
-            
-            // Proses queue jika belum sedang mengirim
-            if (!isSending) {
-                processQueue();
-            }
-        }
-
-        // Fungsi untuk memproses queue pengiriman
-        async function processQueue() {
-            if (dataQueue.length === 0) {
-                isSending = false;
-                updateQueueDisplay();
-                return;
-            }
-
-            isSending = true;
-            const payload = dataQueue[0];
-
-            try {
-                let result;
-                if (typeof window.sendPayloadToSpreadsheet === 'function') {
-                    result = await window.sendPayloadToSpreadsheet(SPREADSHEET_URL, payload);
-                } else {
-                    const response = await fetch(SPREADSHEET_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'text/plain',
-                        },
-                        mode: 'no-cors',
-                        body: JSON.stringify(payload)
-                    });
-                    result = { ok: response.ok, type: response.type };
-                }
-
-                // Cek status response
-                if (result.ok || result.type === 'opaque') {
-                    // Berhasil terkirim
-                    dataQueue.shift(); // Hapus dari queue
-                    sendAttempts = 0;
-                    updateQueueDisplay();
-                    addToTerminal(`📊 Data terkirim (Queue: ${dataQueue.length})`, 'info');
-                    
-                    // Proses item berikutnya
-                    setTimeout(() => processQueue(), SEND_DELAY);
-                } else {
-                    throw new Error('HTTP error');
-                }
-
-            } catch (error) {
-                sendAttempts++;
-                
-                if (sendAttempts >= MAX_RETRIES) {
-                    addToTerminal(`❌ Gagal kirim setelah ${MAX_RETRIES}x percobaan`, 'info');
-                    dataQueue.shift(); // Hapus data yang gagal
-                    sendAttempts = 0;
-                    updateQueueDisplay();
-                    setTimeout(() => processQueue(), SEND_DELAY);
-                } else {
-                    addToTerminal(`⚠️ Retry ${sendAttempts}/${MAX_RETRIES} (Queue: ${dataQueue.length})`, 'info');
-                    setTimeout(() => processQueue(), RETRY_DELAY);
-                }
-                
-                console.error('Spreadsheet error:', error);
-            }
-        }
-
-        function updateStatus(connected) {
-            if (connected) {
-                status.className = 'status connected';
-                status.textContent = '🟢 Terhubung';
-                if (connectBtn) connectBtn.disabled = true;
-                if (disconnectBtn) disconnectBtn.disabled = false;
-                if (sendBtn) sendBtn.disabled = false;
-                if (sendInput) sendInput.disabled = false;
-                if (baudrateSelect) baudrateSelect.disabled = true;
+            addLog(`📊 Terkirim ke spreadsheet (Queue: ${dataQueue.length})`, 'inf');
+            setTimeout(() => processQueue(), SEND_DELAY);
+        } catch (e) {
+            sendAttempts++;
+            if (sendAttempts >= MAX_RETRIES) {
+                addLog(`❌ Gagal kirim setelah ${MAX_RETRIES}x`, 'inf');
+                dataQueue.shift(); sendAttempts = 0; updateQueueDisplay();
+                setTimeout(() => processQueue(), SEND_DELAY);
             } else {
-                status.className = 'status disconnected';
-                status.textContent = '⚫ Tidak Terhubung';
-                if (connectBtn) connectBtn.disabled = false;
-                if (disconnectBtn) disconnectBtn.disabled = true;
-                if (sendBtn) sendBtn.disabled = true;
-                if (sendInput) sendInput.disabled = true;
-                if (baudrateSelect) baudrateSelect.disabled = false;
+                addLog(`⚠️ Retry ${sendAttempts}/${MAX_RETRIES}`, 'inf');
+                setTimeout(() => processQueue(), RETRY_DELAY);
             }
         }
+    }
 
-        async function connectSerial() {
+    // ─── Connection ───────────────────────────────────────────────
+    function updateStatus(connected) {
+        statusBar.className = 'status-bar ' + (connected ? 'connected' : 'disconnected');
+        statusText.textContent = connected ? 'Terhubung' : 'Tidak Terhubung';
+        connectBtn.disabled    = connected;
+        disconnectBtn.disabled = !connected;
+        baudrateSelect.disabled = connected;
+    }
+
+    connectBtn.addEventListener('click', connectSerial);
+    disconnectBtn.addEventListener('click', disconnectSerial);
+
+    async function connectSerial() {
+        try {
+            const baudRate = parseInt(baudrateSelect.value);
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+
             try {
-                const baudRate = parseInt(baudrateSelect.value);
-                
-                port = await navigator.serial.requestPort();
-                await port.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-
-                try {
-                    if (typeof port.setSignals === 'function') {
-                        await port.setSignals({ dataTerminalReady: true, requestToSend: true });
-                        addToTerminal('ℹ️ DTR/RTS diaktifkan', 'info');
-                    }
-                } catch (e) {
-                    addToTerminal(`⚠️ Tidak bisa set DTR/RTS: ${e?.message ?? e}`, 'info');
+                if (typeof port.setSignals === 'function') {
+                    await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+                    addLog('ℹ️ DTR/RTS diaktifkan', 'inf');
                 }
+            } catch(e) { addLog(`⚠️ DTR/RTS: ${e?.message ?? e}`, 'inf'); }
 
-                addToTerminal(`✅ Terhubung dengan baud rate: ${baudRate}`, 'info');
+            addLog(`✅ Terhubung @ ${baudRate} bps`, 'inf');
 
-                const textDecoder = new TextDecoderStream();
-                const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
-                reader = textDecoder.readable.getReader();
+            const dec = new TextDecoderStream();
+            port.readable.pipeTo(dec.writable);
+            reader = dec.readable.getReader();
 
-                const textEncoder = new TextEncoderStream();
-                const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
-                writer = textEncoder.writable.getWriter();
+            const enc = new TextEncoderStream();
+            enc.readable.pipeTo(port.writable);
+            writer = enc.writable.getWriter();
 
-                updateStatus(true);
+            updateStatus(true);
+            keepReading  = true;
+            rxBuffer     = '';
+            rxLastByteAt = 0;
+            lastRxEmitAt = Date.now();
 
-                keepReading = true;
-                rxBuffer = '';
-                lastRxEmitAt = Date.now();
-                rxLastByteAt = 0;
-                if (rxFlushTimer) {
-                    clearTimeout(rxFlushTimer);
-                    rxFlushTimer = undefined;
-                }
-                if (rxNoDataTimer) {
-                    clearTimeout(rxNoDataTimer);
-                    rxNoDataTimer = undefined;
-                }
-                rxNoDataTimer = setTimeout(() => {
-                    if (!keepReading) return;
-                    if (rxLastByteAt === 0) {
-                        addToTerminal('⚠️ Tidak ada data masuk (RX) setelah terhubung. Kemungkinan: baudrate/parity salah, timbangan tidak stream otomatis, atau butuh command.', 'info');
-                    }
-                }, 5000);
-                addToTerminal('ℹ️ Mulai membaca data serial...', 'info');
-                readLoop();
+            if (rxNoDataTimer) clearTimeout(rxNoDataTimer);
+            rxNoDataTimer = setTimeout(() => {
+                if (keepReading && rxLastByteAt === 0)
+                    addLog('⚠️ Tidak ada data RX dalam 5 detik. Cek baudrate/kabel.', 'inf');
+            }, 5000);
 
-            } catch (error) {
-                addToTerminal(`❌ Error: ${error.message}`, 'info');
-                console.error('Error:', error);
-            }
+            addLog('ℹ️ Membaca data serial...', 'inf');
+            readLoop();
+        } catch(e) {
+            addLog(`❌ ${e.message}`, 'inf');
         }
+    }
 
-        async function readLoop() {
-            while (port.readable && keepReading) {
-                try {
-                    const { value, done } = await reader.read();
-                    if (done) {
-                        addToTerminal('⚠️ Reader selesai (done=true)', 'info');
-                        break;
-                    }
-                    if (!value) {
-                        continue;
-                    }
+    async function readLoop() {
+        while (port.readable && keepReading) {
+            try {
+                const { value, done } = await reader.read();
+                if (done) { addLog('⚠️ Reader selesai', 'inf'); break; }
+                if (!value) continue;
 
-                    rxLastByteAt = Date.now();
+                rxLastByteAt = Date.now();
+                rxBuffer += value;
 
-                    rxBuffer += value;
+                const now = Date.now();
+                const emitBySize = rxBuffer.length >= RX_MAX_BUFFER_LEN;
+                const emitByTime = now - lastRxEmitAt >= RX_MAX_EMIT_INTERVAL;
 
-                    const now = Date.now();
-                    const shouldEmitBySize = rxBuffer.length >= RX_MAX_BUFFER_LEN;
-                    const shouldEmitByTime = now - lastRxEmitAt >= RX_MAX_EMIT_INTERVAL;
+                if (rxFlushTimer) clearTimeout(rxFlushTimer);
+                rxFlushTimer = setTimeout(() => {
+                    const line = rxBuffer.trim();
+                    rxBuffer = '';
+                    if (!line) return;
+                    lastRxEmitAt = Date.now();
+                    addLog(`RX: ${line}`, 'rx');
+                    addRecord(line);
+                    sendToSpreadsheet(line).catch(() => {});
+                }, RX_FLUSH_DELAY);
 
-                    if (rxFlushTimer) {
-                        clearTimeout(rxFlushTimer);
-                    }
-                    rxFlushTimer = setTimeout(() => {
-                        const rawLine = String(rxBuffer);
-                        const line = rawLine.trim();
-                        rxBuffer = '';
+                const parts = rxBuffer.split(/\r\n|\n|\r/);
+                rxBuffer = parts.pop() ?? '';
 
-                        if (!line) {
-                            addToTerminal(`RX(raw): ${rxDebugString(rawLine)}`, 'received');
-                            return;
-                        }
+                for (const raw of parts) {
+                    const line = raw.trim();
+                    if (!line) continue;
+                    addLog(`RX: ${line}`, 'rx');
+                    addRecord(line);
+                    sendToSpreadsheet(line).catch(() => {});
+                    lastRxEmitAt = now;
+                }
 
-                        lastRxEmitAt = Date.now();
-
-                        addToTerminal(`RX: ${line}`, 'received');
-                        sendToSpreadsheet(line).catch(err => {
-                            console.error('Queue error:', err);
-                        });
-                    }, RX_FLUSH_DELAY);
-
-                    const parts = rxBuffer.split(/\r\n|\n|\r/);
-                    rxBuffer = parts.pop() ?? '';
-
-                    for (const raw of parts) {
-                        const rawLine = String(raw);
-                        const line = rawLine.trim();
-                        if (!line) {
-                            addToTerminal(`RX(raw): ${rxDebugString(rawLine)}`, 'received');
-                            continue;
-                        }
-
-                        addToTerminal(`RX: ${line}`, 'received');
-                        // Kirim data ke spreadsheet (non-blocking)
-                        sendToSpreadsheet(line).catch(err => {
-                            console.error('Queue error:', err);
-                        });
-
+                if ((emitBySize || emitByTime) && rxBuffer) {
+                    const line = rxBuffer.trim();
+                    rxBuffer = '';
+                    if (line) {
                         lastRxEmitAt = now;
+                        addLog(`RX: ${line}`, 'rx');
+                        addRecord(line);
+                        sendToSpreadsheet(line).catch(() => {});
                     }
-
-                    if ((shouldEmitBySize || shouldEmitByTime) && rxBuffer) {
-                        const rawLine = String(rxBuffer);
-                        const line = rawLine.trim();
-                        rxBuffer = '';
-
-                        if (!line) {
-                            addToTerminal(`RX(raw): ${rxDebugString(rawLine)}`, 'received');
-                            return;
-                        }
-
-                        lastRxEmitAt = now;
-
-                        addToTerminal(`RX: ${line}`, 'received');
-                        sendToSpreadsheet(line).catch(err => {
-                            console.error('Queue error:', err);
-                        });
-                    }
-                } catch (error) {
-                    addToTerminal(`❌ Error membaca: ${error.message}`, 'info');
-                    break;
                 }
-            }
-
-            if (!port?.readable) {
-                addToTerminal('⚠️ Port tidak readable (port.readable kosong)', 'info');
+            } catch(e) {
+                addLog(`❌ Error baca: ${e.message}`, 'inf');
+                break;
             }
         }
+    }
 
-        async function disconnectSerial() {
-            try {
-                keepReading = false;
-
-                if (rxFlushTimer) {
-                    clearTimeout(rxFlushTimer);
-                    rxFlushTimer = undefined;
-                }
-
-                if (rxNoDataTimer) {
-                    clearTimeout(rxNoDataTimer);
-                    rxNoDataTimer = undefined;
-                }
-                
-                if (reader) {
-                    await reader.cancel();
-                    reader.releaseLock();
-                }
-                
-                if (writer) {
-                    await writer.close();
-                }
-                
-                if (port) {
-                    await port.close();
-                }
-
-                addToTerminal('🔌 Koneksi diputus', 'info');
-                updateStatus(false);
-
-            } catch (error) {
-                addToTerminal(`❌ Error saat memutus: ${error.message}`, 'info');
-                console.error('Error:', error);
-            }
+    async function disconnectSerial() {
+        try {
+            keepReading = false;
+            if (rxFlushTimer)  { clearTimeout(rxFlushTimer);  rxFlushTimer  = undefined; }
+            if (rxNoDataTimer) { clearTimeout(rxNoDataTimer); rxNoDataTimer = undefined; }
+            if (reader) { await reader.cancel(); reader.releaseLock(); }
+            if (writer) { await writer.close(); }
+            if (port)   { await port.close(); }
+            addLog('🔌 Koneksi diputus', 'inf');
+            updateStatus(false);
+        } catch(e) {
+            addLog(`❌ Error putus: ${e.message}`, 'inf');
         }
+    }
 
-        async function sendData() {
-            if (!sendInput) return;
-            if (!writer) return;
-
-            const data = sendInput.value;
-            if (!data) return;
-
-            try {
-                await writer.write(data + '\n');
-                addToTerminal(`TX: ${data}`, 'sent');
-                sendInput.value = '';
-            } catch (error) {
-                addToTerminal(`❌ Error mengirim: ${error.message}`, 'info');
-            }
-        }
-
-        function clearTerminal() {
-            terminal.innerHTML = '';
-            addToTerminal('🧹 Terminal dibersihkan', 'info');
-        }
-
-        if (connectBtn) connectBtn.addEventListener('click', connectSerial);
-        if (disconnectBtn) disconnectBtn.addEventListener('click', disconnectSerial);
-        if (sendBtn) sendBtn.addEventListener('click', sendData);
-        if (clearBtn) clearBtn.addEventListener('click', clearTerminal);
-
-        if (sendInput) {
-            sendInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    sendData();
-                }
-            });
-        }
-
-        // Pesan awal
-        addToTerminal('🚀 Serial Port Monitor siap digunakan', 'info');
-        addToTerminal('📌 Klik "Hubungkan" untuk memilih port serial', 'info');
-    </script>
+    // ─── Init ─────────────────────────────────────────────────────
+    loadRecords();
+    renderTable();
+    addLog('🚀 Monitor Timbangan siap digunakan', 'inf');
+    addLog('📌 Klik "Hubungkan" untuk memilih port serial', 'inf');
+</script>
 </body>
 </html>
