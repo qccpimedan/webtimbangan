@@ -695,15 +695,38 @@
     async function disconnectSerial() {
         try {
             keepReading = false;
+
+            // Bersihkan timer terlebih dahulu
             if (rxFlushTimer)  { clearTimeout(rxFlushTimer);  rxFlushTimer  = undefined; }
             if (rxNoDataTimer) { clearTimeout(rxNoDataTimer); rxNoDataTimer = undefined; }
-            if (reader) { await reader.cancel(); reader.releaseLock(); }
-            if (writer) { await writer.close(); }
-            if (port)   { await port.close(); }
+
+            // 1. Cancel reader — ini akan membuat read() di readLoop() throw/done
+            //    dan readLoop akan keluar dari while-loop secara natural.
+            if (reader) {
+                try { await reader.cancel(); } catch (_) {}
+                // Tunggu sebentar agar readLoop() sempat keluar dan melepas lock
+                await new Promise(r => setTimeout(r, 100));
+                try { reader.releaseLock(); } catch (_) {}
+                reader = null;
+            }
+
+            // 2. Tutup writer
+            if (writer) {
+                try { writer.releaseLock(); } catch (_) {}
+                writer = null;
+            }
+
+            // 3. Tutup port setelah semua stream dilepas
+            if (port) {
+                try { await port.close(); } catch (_) {}
+                port = null;
+            }
+
             addLog('🔌 Koneksi diputus', 'inf');
             updateStatus(false);
         } catch(e) {
             addLog(`❌ Error putus: ${e.message}`, 'inf');
+            updateStatus(false);
         }
     }
 
