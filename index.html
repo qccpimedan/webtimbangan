@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor Timbangan Digital</title>
+    <!-- SheetJS untuk export XLSX -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -449,7 +451,7 @@
 
     function pad(n) { return String(n).padStart(2, '0'); }
 
-    // ─── Export Excel (CSV → .xlsx via SheetJS) ───────────────────
+    // ─── Export Excel (.xlsx via SheetJS) ────────────────────────
     exportBtn.addEventListener('click', exportToExcel);
 
     function exportToExcel() {
@@ -458,26 +460,72 @@
             return;
         }
 
-        // Build CSV content
+        if (typeof XLSX === 'undefined') {
+            alert('Library SheetJS belum dimuat. Periksa koneksi internet.');
+            return;
+        }
+
+        // ── 1. Siapkan data sebagai array of arrays ──────────────
         const header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
-        const rows   = records.map((r, i) => [i + 1, r.date, r.time, r.value]);
-        const csvRows = [header, ...rows].map(row =>
-            row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-        );
-        const csvContent = '\uFEFF' + csvRows.join('\r\n'); // BOM for Excel UTF-8
+        const dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value]);
+        const sheetData = [header, ...dataRows];
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        const ts   = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
-        a.href     = url;
-        a.download = `data_timbangan_${ts}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // ── 2. Buat worksheet dari array of arrays ───────────────
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
-        addLog(`✅ Export berhasil: ${records.length} baris`, 'inf');
+        // ── 3. Lebar kolom otomatis ──────────────────────────────
+        const colWidths = header.map((h, colIdx) => {
+            const maxLen = sheetData.reduce((max, row) => {
+                const val = row[colIdx] !== undefined ? String(row[colIdx]) : '';
+                return Math.max(max, val.length);
+            }, h.length);
+            return { wch: Math.min(maxLen + 4, 50) };
+        });
+        ws['!cols'] = colWidths;
+
+        // ── 4. Style header (tebal + background) ─────────────────
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
+            if (!ws[cellAddr]) continue;
+            ws[cellAddr].s = {
+                font:      { bold: true, color: { rgb: 'FFFFFF' } },
+                fill:      { fgColor: { rgb: '667EEA' } },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: {
+                    top:    { style: 'thin', color: { rgb: 'AAAAAA' } },
+                    bottom: { style: 'thin', color: { rgb: 'AAAAAA' } },
+                    left:   { style: 'thin', color: { rgb: 'AAAAAA' } },
+                    right:  { style: 'thin', color: { rgb: 'AAAAAA' } }
+                }
+            };
+        }
+
+        // ── 5. Border untuk semua sel data ───────────────────────
+        for (let R = range.s.r + 1; R <= range.e.r; R++) {
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[cellAddr]) continue;
+                ws[cellAddr].s = {
+                    border: {
+                        top:    { style: 'thin', color: { rgb: 'DDDDDD' } },
+                        bottom: { style: 'thin', color: { rgb: 'DDDDDD' } },
+                        left:   { style: 'thin', color: { rgb: 'DDDDDD' } },
+                        right:  { style: 'thin', color: { rgb: 'DDDDDD' } }
+                    }
+                };
+            }
+        }
+
+        // ── 6. Buat workbook dan tambahkan sheet ─────────────────
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Data Timbangan');
+
+        // ── 7. Download sebagai .xlsx ────────────────────────────
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        XLSX.writeFile(wb, `data_timbangan_${ts}.xlsx`, { bookType: 'xlsx', cellStyles: true });
+
+        addLog(`✅ Export XLSX berhasil: ${records.length} baris`, 'inf');
     }
 
     // ─── Clear Data ───────────────────────────────────────────────
