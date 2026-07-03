@@ -251,6 +251,13 @@
                 ⚠️ Browser tidak mendukung Web Serial API. Gunakan Chrome, Edge, atau Opera versi terbaru.
             </div>
             <div class="controls-row">
+                <div class="control-group">
+                    <label for="modeSelect">Mode</label>
+                    <select id="modeSelect">
+                        <option value="biasa">Hasil Biasa</option>
+                        <option value="kadar_air">Kadar Air</option>
+                    </select>
+                </div>
                 <div class="control-group" style="display:none;">
                     <label for="baudrate">Baud Rate</label>
                     <select id="baudrate">
@@ -268,6 +275,7 @@
                 </div>
                 <button id="connectBtn" class="btn btn-primary">🔌 Hubungkan</button>
                 <button id="disconnectBtn" class="btn btn-danger" disabled>⛔ Putuskan</button>
+                <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button>
                 <div id="statusBar" class="status-bar disconnected">
                     <span class="status-dot"></span>
                     <span id="statusText">Tidak Terhubung</span>
@@ -315,7 +323,7 @@
 
             <div id="dataTableWrapper" class="data-table-wrapper">
                 <table id="dataTable">
-                    <thead>
+                    <thead id="tableHead">
                         <tr>
                             <th class="no-col">#</th>
                             <th>Tanggal</th>
@@ -353,12 +361,17 @@
 
     // ─── State ────────────────────────────────────────────────────
     let port, reader, writer;
+    let readableStreamClosed, writableStreamClosed;
     let keepReading = false;
     let rxBuffer = '';
     let rxFlushTimer, rxNoDataTimer;
     let lastRxEmitAt = 0, rxLastByteAt = 0;
     let dataQueue = [], isSending = false, sendAttempts = 0;
     let sessionCount = 0;
+
+    // ─── Mode State ───────────────────────────────────────────────
+    let currentMode = localStorage.getItem('timbangan_mode') || 'biasa';
+    let kadarAirBuffer = [];
 
     // ─── Persistent data (localStorage) ──────────────────────────
     let records = [];
@@ -367,6 +380,14 @@
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             records = raw ? JSON.parse(raw) : [];
+            if (currentMode === 'kadar_air' && records.length > 0) {
+                const last = records[records.length - 1];
+                if (last.value1 && !last.value2 && !last.value3) kadarAirBuffer = [last.value1];
+                else if (last.value1 && last.value2 && !last.value3) kadarAirBuffer = [last.value1, last.value2];
+                else kadarAirBuffer = [];
+            } else {
+                kadarAirBuffer = [];
+            }
         } catch { records = []; }
     }
 
@@ -377,6 +398,7 @@
     // ─── DOM refs ─────────────────────────────────────────────────
     const connectBtn    = document.getElementById('connectBtn');
     const disconnectBtn = document.getElementById('disconnectBtn');
+    const dummyBtn      = document.getElementById('dummyBtn');
     const baudrateSelect= document.getElementById('baudrate');
     const terminal      = document.getElementById('terminal');
     const statusBar     = document.getElementById('statusBar');
@@ -391,6 +413,55 @@
     const statSession   = document.getElementById('statSession');
     const exportBtn     = document.getElementById('exportBtn');
     const clearDataBtn  = document.getElementById('clearDataBtn');
+    const modeSelect    = document.getElementById('modeSelect');
+
+    if (modeSelect) {
+        modeSelect.value = currentMode;
+        modeSelect.addEventListener('change', (e) => {
+            if (records.length > 0) {
+                if (!confirm('Mengubah mode akan menghapus data saat ini. Lanjutkan?')) {
+                    e.target.value = currentMode;
+                    return;
+                }
+                records = [];
+                sessionCount = 0;
+                kadarAirBuffer = [];
+                saveRecords();
+            }
+            currentMode = e.target.value;
+            localStorage.setItem('timbangan_mode', currentMode);
+            updateTableHeaders();
+            renderTable();
+        });
+    }
+
+    const tableHead = document.getElementById('tableHead');
+    function updateTableHeaders() {
+        if (currentMode === 'kadar_air') {
+            tableHead.innerHTML = `
+                <tr>
+                    <th class="no-col">#</th>
+                    <th>Tanggal</th>
+                    <th>Waktu</th>
+                    <th>Hasil 1</th>
+                    <th>Hasil 2</th>
+                    <th>Hasil 3</th>
+                </tr>
+            `;
+        } else {
+            tableHead.innerHTML = `
+                <tr>
+                    <th class="no-col">#</th>
+                    <th>Tanggal</th>
+                    <th>Waktu</th>
+                    <th>Hasil Pembacaan</th>
+                </tr>
+            `;
+        }
+    }
+
+    // Initialize headers on load
+    updateTableHeaders();
 
     // ─── Browser check ────────────────────────────────────────────
     if (!('serial' in navigator)) {
@@ -415,24 +486,57 @@
 
         if (records.length === 0) {
             emptyRow.style.display = '';
+            emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 6 : 4;
         } else {
             emptyRow.style.display = 'none';
             records.slice().reverse().forEach((rec, i) => {
                 const tr = document.createElement('tr');
                 tr.className = 'data-row';
-                tr.innerHTML = `
-                    <td class="no-col">${records.length - i}</td>
-                    <td class="time-col">${rec.date}</td>
-                    <td class="time-col">${rec.time}</td>
-                    <td class="data-col">${escapeHtml(rec.value)}</td>
-                `;
+                if (currentMode === 'kadar_air') {
+                    tr.innerHTML = `
+                        <td class="no-col">${records.length - i}</td>
+                        <td class="time-col">${rec.date}</td>
+                        <td class="time-col">${rec.time}</td>
+                        <td class="data-col">${escapeHtml(rec.value1 || '')}</td>
+                        <td class="data-col">${escapeHtml(rec.value2 || '')}</td>
+                        <td class="data-col">${escapeHtml(rec.value3 || '')}</td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td class="no-col">${records.length - i}</td>
+                        <td class="time-col">${rec.date}</td>
+                        <td class="time-col">${rec.time}</td>
+                        <td class="data-col">${escapeHtml(rec.value || '')}</td>
+                    `;
+                }
                 dataTableBody.appendChild(tr);
             });
         }
 
-        statTotal.textContent   = records.length;
+        let totalReadings = 0;
+        if (currentMode === 'kadar_air') {
+            records.forEach(r => {
+                if (r.value1) totalReadings++;
+                if (r.value2) totalReadings++;
+                if (r.value3) totalReadings++;
+            });
+        } else {
+            totalReadings = records.length;
+        }
+        
+        statTotal.textContent   = totalReadings;
         statSession.textContent = sessionCount;
-        statLast.textContent    = records.length > 0 ? records[records.length - 1].value : '—';
+
+        if (records.length > 0) {
+            const last = records[records.length - 1];
+            if (currentMode === 'kadar_air') {
+                statLast.textContent = last.value3 || last.value2 || last.value1 || '—';
+            } else {
+                statLast.textContent = last.value || '—';
+            }
+        } else {
+            statLast.textContent = '—';
+        }
     }
 
     function escapeHtml(str) {
@@ -443,7 +547,21 @@
         const now  = new Date();
         const date = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
         const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        records.push({ date, time, value: value.trim() });
+        
+        if (currentMode === 'kadar_air') {
+            kadarAirBuffer.push(value.trim());
+            if (kadarAirBuffer.length === 1) {
+                records.push({ date, time, value1: kadarAirBuffer[0], value2: '', value3: '' });
+            } else if (kadarAirBuffer.length === 2) {
+                records[records.length - 1].value2 = kadarAirBuffer[1];
+            } else if (kadarAirBuffer.length === 3) {
+                records[records.length - 1].value3 = kadarAirBuffer[2];
+                kadarAirBuffer = [];
+            }
+        } else {
+            records.push({ date, time, value: value.trim() });
+        }
+        
         sessionCount++;
         saveRecords();
         renderTable();
@@ -466,8 +584,14 @@
         }
 
         // ── 1. Siapkan data sebagai array of arrays ──────────────
-        const header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
-        const dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value]);
+        let header, dataRows;
+        if (currentMode === 'kadar_air') {
+            header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2', 'Hasil 3'];
+            dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value1 || '', r.value2 || '', r.value3 || '']);
+        } else {
+            header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
+            dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value || '']);
+        }
         const sheetData = [header, ...dataRows];
 
         // ── 2. Buat worksheet dari array of arrays ───────────────
@@ -533,6 +657,7 @@
         if (!confirm(`Hapus semua ${records.length} data? Tindakan ini tidak dapat dibatalkan.`)) return;
         records = [];
         sessionCount = 0;
+        kadarAirBuffer = [];
         saveRecords();
         renderTable();
         addLog('🗑️ Semua data telah dihapus', 'inf');
@@ -595,6 +720,15 @@
 
     connectBtn.addEventListener('click', connectSerial);
     disconnectBtn.addEventListener('click', disconnectSerial);
+    
+    if (dummyBtn) {
+        dummyBtn.addEventListener('click', () => {
+            const randomWeight = (Math.random() * 50 + 10).toFixed(2) + ' kg';
+            addLog(`RX (Dummy): ${randomWeight}`, 'rx');
+            addRecord(randomWeight);
+            // Tidak mengirim ke spreadsheet karena ini data dummy untuk testing
+        });
+    }
 
     async function connectSerial() {
         try {
@@ -612,11 +746,11 @@
             addLog(`✅ Terhubung @ ${baudRate} bps`, 'inf');
 
             const dec = new TextDecoderStream();
-            port.readable.pipeTo(dec.writable);
+            readableStreamClosed = port.readable.pipeTo(dec.writable).catch(() => {});
             reader = dec.readable.getReader();
 
             const enc = new TextEncoderStream();
-            enc.readable.pipeTo(port.writable);
+            writableStreamClosed = enc.readable.pipeTo(port.writable).catch(() => {});
             writer = enc.writable.getWriter();
 
             updateStatus(true);
@@ -704,15 +838,18 @@
             //    dan readLoop akan keluar dari while-loop secara natural.
             if (reader) {
                 try { await reader.cancel(); } catch (_) {}
-                // Tunggu sebentar agar readLoop() sempat keluar dan melepas lock
-                await new Promise(r => setTimeout(r, 100));
-                try { reader.releaseLock(); } catch (_) {}
+                if (readableStreamClosed) {
+                    await readableStreamClosed.catch(() => {});
+                }
                 reader = null;
             }
 
             // 2. Tutup writer
             if (writer) {
-                try { writer.releaseLock(); } catch (_) {}
+                try { await writer.close(); } catch (_) {}
+                if (writableStreamClosed) {
+                    await writableStreamClosed.catch(() => {});
+                }
                 writer = null;
             }
 
