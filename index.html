@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,11 @@
     <!-- SheetJS untuk export XLSX (offline) -->
     <script src="xlsx.full.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,7 +22,10 @@
             color: #e0e0e0;
         }
 
-        .app-wrapper { max-width: 1100px; margin: 0 auto; }
+        .app-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -28,14 +36,25 @@
             align-items: center;
             gap: 16px;
         }
-        .header-icon { font-size: 36px; }
-        .header h1 { font-size: 22px; margin-bottom: 4px; }
-        .header p { opacity: 0.85; font-size: 13px; }
+
+        .header-icon {
+            font-size: 36px;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            opacity: 0.85;
+            font-size: 13px;
+        }
 
         .main-card {
             background: #1e2a3a;
             border-radius: 0 0 16px 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             overflow: hidden;
         }
 
@@ -60,10 +79,20 @@
             flex-wrap: wrap;
         }
 
-        .control-group { display: flex; flex-direction: column; gap: 6px; }
-        .control-group label { font-size: 12px; color: #aaa; font-weight: 600; }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
 
-        select, input[type="text"] {
+        .control-group label {
+            font-size: 12px;
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        select,
+        input[type="text"] {
             padding: 10px 14px;
             background: #0f1923;
             border: 1.5px solid #2a3a4a;
@@ -72,7 +101,9 @@
             font-size: 14px;
             transition: border-color 0.2s;
         }
-        select:focus, input[type="text"]:focus {
+
+        select:focus,
+        input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -87,14 +118,43 @@
             transition: all 0.2s;
             letter-spacing: 0.4px;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
-        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
-        .btn-danger  { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
-        .btn-success { background: linear-gradient(135deg, #27ae60, #219a52); color: white; }
-        .btn-warning { background: linear-gradient(135deg, #f39c12, #d68910); color: white; }
-        .btn-gray    { background: #2a3a4a; color: #ccc; }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #219a52);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #d68910);
+            color: white;
+        }
+
+        .btn-gray {
+            background: #2a3a4a;
+            color: #ccc;
+        }
 
         .status-bar {
             display: flex;
@@ -105,29 +165,34 @@
             font-size: 13px;
             font-weight: 700;
         }
-        .status-bar.disconnected { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
-        .status-bar.connected    { background: rgba(39,174,96,0.15);  color: #27ae60; border: 1px solid rgba(39,174,96,0.3); }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+
+        .status-bar.disconnected {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .status-bar.connected {
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.3);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: currentColor;
+        }
 
         .warning-box {
-            background: rgba(243,156,18,0.12);
-            border: 1px solid rgba(243,156,18,0.3);
+            background: rgba(243, 156, 18, 0.12);
+            border: 1px solid rgba(243, 156, 18, 0.3);
             color: #f39c12;
             padding: 12px 16px;
             border-radius: 8px;
             font-size: 13px;
             margin-bottom: 12px;
-            display: none;
-        }
-
-        .queue-badge {
-            background: rgba(102,126,234,0.15);
-            border: 1px solid rgba(102,126,234,0.3);
-            color: #667eea;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
             display: none;
         }
 
@@ -143,13 +208,36 @@
             font-size: 12px;
             line-height: 1.7;
         }
-        .terminal::-webkit-scrollbar { width: 6px; }
-        .terminal::-webkit-scrollbar-track { background: #1a1a2e; }
-        .terminal::-webkit-scrollbar-thumb { background: #3a4a5a; border-radius: 3px; }
-        .ts  { color: #555; margin-right: 6px; }
-        .rx  { color: #4ec9b0; }
-        .inf { color: #569cd6; }
-        .snt { color: #ce9178; }
+
+        .terminal::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: #3a4a5a;
+            border-radius: 3px;
+        }
+
+        .ts {
+            color: #555;
+            margin-right: 6px;
+        }
+
+        .rx {
+            color: #4ec9b0;
+        }
+
+        .inf {
+            color: #569cd6;
+        }
+
+        .snt {
+            color: #ce9178;
+        }
 
         /* ─── Stats bar ─── */
         .stats-row {
@@ -157,6 +245,7 @@
             gap: 12px;
             flex-wrap: wrap;
         }
+
         .stat-card {
             flex: 1;
             min-width: 120px;
@@ -166,9 +255,24 @@
             padding: 14px 18px;
             text-align: center;
         }
-        .stat-card .val { font-size: 28px; font-weight: 800; color: #667eea; }
-        .stat-card .lbl { font-size: 11px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
-        .stat-card.highlight .val { color: #27ae60; }
+
+        .stat-card .val {
+            font-size: 28px;
+            font-weight: 800;
+            color: #667eea;
+        }
+
+        .stat-card .lbl {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .stat-card.highlight .val {
+            color: #27ae60;
+        }
 
         /* ─── Table ─── */
         .table-toolbar {
@@ -179,7 +283,13 @@
             flex-wrap: wrap;
             margin-bottom: 12px;
         }
-        .table-toolbar-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+        .table-toolbar-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
         .data-table-wrapper {
             overflow-x: auto;
@@ -188,15 +298,26 @@
             max-height: 400px;
             overflow-y: auto;
         }
-        .data-table-wrapper::-webkit-scrollbar { width: 6px; }
-        .data-table-wrapper::-webkit-scrollbar-track { background: #1a1a2e; }
-        .data-table-wrapper::-webkit-scrollbar-thumb { background: #3a4a5a; border-radius: 3px; }
+
+        .data-table-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .data-table-wrapper::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+
+        .data-table-wrapper::-webkit-scrollbar-thumb {
+            background: #3a4a5a;
+            border-radius: 3px;
+        }
 
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
         }
+
         thead th {
             background: #0f1923;
             padding: 12px 16px;
@@ -210,235 +331,267 @@
             top: 0;
             z-index: 2;
         }
-        tbody tr { border-bottom: 1px solid #1e2a3a; transition: background 0.15s; }
-        tbody tr:hover { background: rgba(102,126,234,0.06); }
-        tbody tr:last-child { border-bottom: none; }
-        tbody td { padding: 11px 16px; color: #d0d8e0; }
-        tbody td.no-col { color: #666; width: 50px; }
-        tbody td.time-col { color: #888; white-space: nowrap; }
-        tbody td.data-col { color: #4ec9b0; font-family: 'Courier New', monospace; font-weight: 600; }
+
+        tbody tr {
+            border-bottom: 1px solid #1e2a3a;
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.06);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody td {
+            padding: 11px 16px;
+            color: #d0d8e0;
+        }
+
+        tbody td.no-col {
+            color: #666;
+            width: 50px;
+        }
+
+        tbody td.time-col {
+            color: #888;
+            white-space: nowrap;
+        }
+
+        tbody td.data-col {
+            color: #4ec9b0;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
 
         .empty-state {
             text-align: center;
             padding: 48px 20px;
             color: #444;
         }
-        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-        .empty-state p { font-size: 14px; }
+
+        .empty-state .icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
 
         @media (max-width: 600px) {
-            .controls-row { flex-direction: column; }
-            .btn { width: 100%; }
+            .controls-row {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
+
 <body>
-<div class="app-wrapper">
-    <div class="header">
-        <div class="header-icon">⚖️</div>
-        <div>
-            <h1>Monitor Timbangan Digital</h1>
-            <p>Serial Port Reader — Data disimpan lokal &amp; dapat diekspor ke Excel</p>
+    <div class="app-wrapper">
+        <div class="header">
+            <div class="header-icon">⚖️</div>
+            <div>
+                <h1>Monitor Timbangan Digital</h1>
+                <p>Serial Port Reader — Data disimpan lokal &amp; dapat diekspor ke Excel</p>
+            </div>
+        </div>
+
+        <div class="main-card">
+
+            <!-- KONEKSI -->
+            <div class="section">
+                <div class="section-title">⚙️ Konfigurasi Koneksi</div>
+                <div id="warningBox" class="warning-box">
+                    ⚠️ Browser tidak mendukung Web Serial API. Gunakan Chrome, Edge, atau Opera versi terbaru.
+                </div>
+                <div class="controls-row">
+                    <div class="control-group">
+                        <label for="modeSelect">Mode</label>
+                        <select id="modeSelect">
+                            <option value="biasa">Hasil Biasa</option>
+                            <option value="kadar_air">Kadar Air</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="display:none;">
+                        <label for="baudrate">Baud Rate</label>
+                        <select id="baudrate">
+                            <option value="300">300</option>
+                            <option value="1200">1200</option>
+                            <option value="2400">2400</option>
+                            <option value="4800" selected>4800</option>
+                            <option value="9600">9600</option>
+                            <option value="19200">19200</option>
+                            <option value="38400">38400</option>
+                            <option value="57600">57600</option>
+                            <option value="115200">115200</option>
+                            <option value="230400">230400</option>
+                        </select>
+                    </div>
+                    <button id="connectBtn" class="btn btn-primary">🔌 Hubungkan</button>
+                    <button id="disconnectBtn" class="btn btn-danger" disabled>⛔ Putuskan</button>
+                    <!-- <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button> -->
+                    <div id="statusBar" class="status-bar disconnected">
+                        <span class="status-dot"></span>
+                        <span id="statusText">Tidak Terhubung</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TERMINAL -->
+            <div class="section">
+                <div class="section-title">📟 Terminal Serial</div>
+                <div id="terminal" class="terminal"></div>
+            </div>
+
+            <!-- STATISTIK -->
+            <div class="section">
+                <div class="section-title">📊 Statistik</div>
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="val" id="statTotal">0</div>
+                        <div class="lbl">Total Data</div>
+                    </div>
+                    <div class="stat-card highlight">
+                        <div class="val" id="statLast">—</div>
+                        <div class="lbl">Pembacaan Terakhir</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="val" id="statSession">0</div>
+                        <div class="lbl">Sesi Ini</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABEL DATA -->
+            <div class="section" style="border-bottom:none;">
+                <div class="table-toolbar">
+                    <div class="table-toolbar-left">
+                        <div class="section-title" style="margin-bottom:0;">📋 Riwayat Data</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button id="exportBtn" class="btn btn-success">⬇️ Export Excel</button>
+                        <button id="clearDataBtn" class="btn btn-warning">🗑️ Hapus Semua</button>
+                    </div>
+                </div>
+
+                <div id="dataTableWrapper" class="data-table-wrapper">
+                    <table id="dataTable">
+                        <thead id="tableHead">
+                            <tr>
+                                <th class="no-col">#</th>
+                                <th>Tanggal</th>
+                                <th>Waktu</th>
+                                <th>Hasil Pembacaan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <tr id="emptyRow">
+                                <td colspan="4">
+                                    <div class="empty-state">
+                                        <div class="icon">📭</div>
+                                        <p>Belum ada data. Hubungkan timbangan untuk mulai merekam.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="main-card">
+    <script>
+        // ─── Config ───────────────────────────────────────────────────
+        const STORAGE_KEY = "timbangan_data_v1";
+        const RX_FLUSH_DELAY = 200;
+        const RX_MAX_EMIT_INTERVAL = 500;
+        const RX_MAX_BUFFER_LEN = 256;
 
-        <!-- KONEKSI -->
-        <div class="section">
-            <div class="section-title">⚙️ Konfigurasi Koneksi</div>
-            <div id="warningBox" class="warning-box">
-                ⚠️ Browser tidak mendukung Web Serial API. Gunakan Chrome, Edge, atau Opera versi terbaru.
-            </div>
-            <div class="controls-row">
-                <div class="control-group">
-                    <label for="modeSelect">Mode</label>
-                    <select id="modeSelect">
-                        <option value="biasa">Hasil Biasa</option>
-                        <option value="kadar_air">Kadar Air</option>
-                    </select>
-                </div>
-                <div class="control-group" style="display:none;">
-                    <label for="baudrate">Baud Rate</label>
-                    <select id="baudrate">
-                        <option value="300">300</option>
-                        <option value="1200">1200</option>
-                        <option value="2400">2400</option>
-                        <option value="4800" selected>4800</option>
-                        <option value="9600">9600</option>
-                        <option value="19200">19200</option>
-                        <option value="38400">38400</option>
-                        <option value="57600">57600</option>
-                        <option value="115200">115200</option>
-                        <option value="230400">230400</option>
-                    </select>
-                </div>
-                <button id="connectBtn" class="btn btn-primary">🔌 Hubungkan</button>
-                <button id="disconnectBtn" class="btn btn-danger" disabled>⛔ Putuskan</button>
-                <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button>
-                <div id="statusBar" class="status-bar disconnected">
-                    <span class="status-dot"></span>
-                    <span id="statusText">Tidak Terhubung</span>
-                </div>
-                <div id="queueBadge" class="queue-badge">📤 Queue: <span id="queueCount">0</span></div>
-            </div>
-        </div>
+        // ─── State ────────────────────────────────────────────────────
+        let port, reader, writer;
+        let readableStreamClosed, writableStreamClosed;
+        let keepReading = false;
+        let rxBuffer = '';
+        let rxFlushTimer, rxNoDataTimer;
+        let lastRxEmitAt = 0, rxLastByteAt = 0;
+        let sessionCount = 0;
 
-        <!-- TERMINAL -->
-        <div class="section">
-            <div class="section-title">📟 Terminal Serial</div>
-            <div id="terminal" class="terminal"></div>
-        </div>
+        // ─── Mode State ───────────────────────────────────────────────
+        let currentMode = localStorage.getItem('timbangan_mode') || 'biasa';
+        let kadarAirBuffer = [];
 
-        <!-- STATISTIK -->
-        <div class="section">
-            <div class="section-title">📊 Statistik</div>
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="val" id="statTotal">0</div>
-                    <div class="lbl">Total Data</div>
-                </div>
-                <div class="stat-card highlight">
-                    <div class="val" id="statLast">—</div>
-                    <div class="lbl">Pembacaan Terakhir</div>
-                </div>
-                <div class="stat-card">
-                    <div class="val" id="statSession">0</div>
-                    <div class="lbl">Sesi Ini</div>
-                </div>
-            </div>
-        </div>
+        // ─── Persistent data (localStorage) ──────────────────────────
+        let records = [];
 
-        <!-- TABEL DATA -->
-        <div class="section" style="border-bottom:none;">
-            <div class="table-toolbar">
-                <div class="table-toolbar-left">
-                    <div class="section-title" style="margin-bottom:0;">📋 Riwayat Data</div>
-                </div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button id="exportBtn" class="btn btn-success">⬇️ Export Excel</button>
-                    <button id="clearDataBtn" class="btn btn-warning">🗑️ Hapus Semua</button>
-                </div>
-            </div>
-
-            <div id="dataTableWrapper" class="data-table-wrapper">
-                <table id="dataTable">
-                    <thead id="tableHead">
-                        <tr>
-                            <th class="no-col">#</th>
-                            <th>Tanggal</th>
-                            <th>Waktu</th>
-                            <th>Hasil Pembacaan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataTableBody">
-                        <tr id="emptyRow">
-                            <td colspan="4">
-                                <div class="empty-state">
-                                    <div class="icon">📭</div>
-                                    <p>Belum ada data. Hubungkan timbangan untuk mulai merekam.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
-</div>
-
-<script>
-    // ─── Config ───────────────────────────────────────────────────
-    const SPREADSHEET_URL = "https://script.google.com/macros/s/AKfycbyah83KJKDsl2UjYwp6_JCouMuO780nahc6lHmrHdb3yjsr4_0MnXtriIlSUGtOQhSn/exec";
-    const STORAGE_KEY = "timbangan_data_v1";
-    const RX_FLUSH_DELAY   = 200;
-    const RX_MAX_EMIT_INTERVAL = 500;
-    const RX_MAX_BUFFER_LEN    = 256;
-    const MAX_RETRIES  = 3;
-    const RETRY_DELAY  = 2000;
-    const SEND_DELAY   = 100;
-
-    // ─── State ────────────────────────────────────────────────────
-    let port, reader, writer;
-    let readableStreamClosed, writableStreamClosed;
-    let keepReading = false;
-    let rxBuffer = '';
-    let rxFlushTimer, rxNoDataTimer;
-    let lastRxEmitAt = 0, rxLastByteAt = 0;
-    let dataQueue = [], isSending = false, sendAttempts = 0;
-    let sessionCount = 0;
-
-    // ─── Mode State ───────────────────────────────────────────────
-    let currentMode = localStorage.getItem('timbangan_mode') || 'biasa';
-    let kadarAirBuffer = [];
-
-    // ─── Persistent data (localStorage) ──────────────────────────
-    let records = [];
-
-    function loadRecords() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            records = raw ? JSON.parse(raw) : [];
-            if (currentMode === 'kadar_air' && records.length > 0) {
-                const last = records[records.length - 1];
-                if (last.value1 && !last.value2 && !last.value3) kadarAirBuffer = [last.value1];
-                else if (last.value1 && last.value2 && !last.value3) kadarAirBuffer = [last.value1, last.value2];
-                else kadarAirBuffer = [];
-            } else {
-                kadarAirBuffer = [];
-            }
-        } catch { records = []; }
-    }
-
-    function saveRecords() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
-    }
-
-    // ─── DOM refs ─────────────────────────────────────────────────
-    const connectBtn    = document.getElementById('connectBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
-    const dummyBtn      = document.getElementById('dummyBtn');
-    const baudrateSelect= document.getElementById('baudrate');
-    const terminal      = document.getElementById('terminal');
-    const statusBar     = document.getElementById('statusBar');
-    const statusText    = document.getElementById('statusText');
-    const warningBox    = document.getElementById('warningBox');
-    const queueBadge    = document.getElementById('queueBadge');
-    const queueCount    = document.getElementById('queueCount');
-    const dataTableBody = document.getElementById('dataTableBody');
-    const emptyRow      = document.getElementById('emptyRow');
-    const statTotal     = document.getElementById('statTotal');
-    const statLast      = document.getElementById('statLast');
-    const statSession   = document.getElementById('statSession');
-    const exportBtn     = document.getElementById('exportBtn');
-    const clearDataBtn  = document.getElementById('clearDataBtn');
-    const modeSelect    = document.getElementById('modeSelect');
-
-    if (modeSelect) {
-        modeSelect.value = currentMode;
-        modeSelect.addEventListener('change', (e) => {
-            if (records.length > 0) {
-                if (!confirm('Mengubah mode akan menghapus data saat ini. Lanjutkan?')) {
-                    e.target.value = currentMode;
-                    return;
+        function loadRecords() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                records = raw ? JSON.parse(raw) : [];
+                if (currentMode === 'kadar_air' && records.length > 0) {
+                    const last = records[records.length - 1];
+                    if (last.value1 && !last.value2 && !last.value3) kadarAirBuffer = [last.value1];
+                    else if (last.value1 && last.value2 && !last.value3) kadarAirBuffer = [last.value1, last.value2];
+                    else kadarAirBuffer = [];
+                } else {
+                    kadarAirBuffer = [];
                 }
-                records = [];
-                sessionCount = 0;
-                kadarAirBuffer = [];
-                saveRecords();
-            }
-            currentMode = e.target.value;
-            localStorage.setItem('timbangan_mode', currentMode);
-            updateTableHeaders();
-            renderTable();
-        });
-    }
+            } catch { records = []; }
+        }
 
-    const tableHead = document.getElementById('tableHead');
-    function updateTableHeaders() {
-        if (currentMode === 'kadar_air') {
-            tableHead.innerHTML = `
+        function saveRecords() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch { }
+        }
+
+        // ─── DOM refs ─────────────────────────────────────────────────
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const dummyBtn = document.getElementById('dummyBtn');
+        const baudrateSelect = document.getElementById('baudrate');
+        const terminal = document.getElementById('terminal');
+        const statusBar = document.getElementById('statusBar');
+        const statusText = document.getElementById('statusText');
+        const warningBox = document.getElementById('warningBox');
+        const dataTableBody = document.getElementById('dataTableBody');
+        const emptyRow = document.getElementById('emptyRow');
+        const statTotal = document.getElementById('statTotal');
+        const statLast = document.getElementById('statLast');
+        const statSession = document.getElementById('statSession');
+        const exportBtn = document.getElementById('exportBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const modeSelect = document.getElementById('modeSelect');
+
+        if (modeSelect) {
+            modeSelect.value = currentMode;
+            modeSelect.addEventListener('change', (e) => {
+                if (records.length > 0) {
+                    if (!confirm('Mengubah mode akan menghapus data saat ini. Lanjutkan?')) {
+                        e.target.value = currentMode;
+                        return;
+                    }
+                    records = [];
+                    sessionCount = 0;
+                    kadarAirBuffer = [];
+                    saveRecords();
+                }
+                currentMode = e.target.value;
+                localStorage.setItem('timbangan_mode', currentMode);
+                updateTableHeaders();
+                renderTable();
+            });
+        }
+
+        const tableHead = document.getElementById('tableHead');
+        function updateTableHeaders() {
+            if (currentMode === 'kadar_air') {
+                tableHead.innerHTML = `
                 <tr>
                     <th class="no-col">#</th>
                     <th>Tanggal</th>
@@ -448,8 +601,8 @@
                     <th>Hasil 3</th>
                 </tr>
             `;
-        } else {
-            tableHead.innerHTML = `
+            } else {
+                tableHead.innerHTML = `
                 <tr>
                     <th class="no-col">#</th>
                     <th>Tanggal</th>
@@ -457,43 +610,43 @@
                     <th>Hasil Pembacaan</th>
                 </tr>
             `;
+            }
         }
-    }
 
-    // Initialize headers on load
-    updateTableHeaders();
+        // Initialize headers on load
+        updateTableHeaders();
 
-    // ─── Browser check ────────────────────────────────────────────
-    if (!('serial' in navigator)) {
-        warningBox.style.display = 'block';
-        connectBtn.disabled = true;
-    }
+        // ─── Browser check ────────────────────────────────────────────
+        if (!('serial' in navigator)) {
+            warningBox.style.display = 'block';
+            connectBtn.disabled = true;
+        }
 
-    // ─── Terminal ─────────────────────────────────────────────────
-    function addLog(msg, type = 'inf') {
-        const ts = new Date().toLocaleTimeString('id-ID', { hour12: false });
-        const div = document.createElement('div');
-        div.innerHTML = `<span class="ts">[${ts}]</span><span class="${type}">${msg}</span>`;
-        terminal.appendChild(div);
-        terminal.scrollTop = terminal.scrollHeight;
-    }
+        // ─── Terminal ─────────────────────────────────────────────────
+        function addLog(msg, type = 'inf') {
+            const ts = new Date().toLocaleTimeString('id-ID', { hour12: false });
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="ts">[${ts}]</span><span class="${type}">${msg}</span>`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
 
-    // ─── Stats + Table ────────────────────────────────────────────
-    function renderTable() {
-        // Remove all rows except emptyRow placeholder
-        const rows = dataTableBody.querySelectorAll('tr.data-row');
-        rows.forEach(r => r.remove());
+        // ─── Stats + Table ────────────────────────────────────────────
+        function renderTable() {
+            // Remove all rows except emptyRow placeholder
+            const rows = dataTableBody.querySelectorAll('tr.data-row');
+            rows.forEach(r => r.remove());
 
-        if (records.length === 0) {
-            emptyRow.style.display = '';
-            emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 6 : 4;
-        } else {
-            emptyRow.style.display = 'none';
-            records.slice().reverse().forEach((rec, i) => {
-                const tr = document.createElement('tr');
-                tr.className = 'data-row';
-                if (currentMode === 'kadar_air') {
-                    tr.innerHTML = `
+            if (records.length === 0) {
+                emptyRow.style.display = '';
+                emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 6 : 4;
+            } else {
+                emptyRow.style.display = 'none';
+                records.slice().reverse().forEach((rec, i) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'data-row';
+                    if (currentMode === 'kadar_air') {
+                        tr.innerHTML = `
                         <td class="no-col">${records.length - i}</td>
                         <td class="time-col">${rec.date}</td>
                         <td class="time-col">${rec.time}</td>
@@ -501,377 +654,329 @@
                         <td class="data-col">${escapeHtml(rec.value2 || '')}</td>
                         <td class="data-col">${escapeHtml(rec.value3 || '')}</td>
                     `;
-                } else {
-                    tr.innerHTML = `
+                    } else {
+                        tr.innerHTML = `
                         <td class="no-col">${records.length - i}</td>
                         <td class="time-col">${rec.date}</td>
                         <td class="time-col">${rec.time}</td>
                         <td class="data-col">${escapeHtml(rec.value || '')}</td>
                     `;
-                }
-                dataTableBody.appendChild(tr);
-            });
-        }
+                    }
+                    dataTableBody.appendChild(tr);
+                });
+            }
 
-        let totalReadings = 0;
-        if (currentMode === 'kadar_air') {
-            records.forEach(r => {
-                if (r.value1) totalReadings++;
-                if (r.value2) totalReadings++;
-                if (r.value3) totalReadings++;
-            });
-        } else {
-            totalReadings = records.length;
-        }
-        
-        statTotal.textContent   = totalReadings;
-        statSession.textContent = sessionCount;
-
-        if (records.length > 0) {
-            const last = records[records.length - 1];
+            let totalReadings = 0;
             if (currentMode === 'kadar_air') {
-                statLast.textContent = last.value3 || last.value2 || last.value1 || '—';
+                records.forEach(r => {
+                    if (r.value1) totalReadings++;
+                    if (r.value2) totalReadings++;
+                    if (r.value3) totalReadings++;
+                });
             } else {
-                statLast.textContent = last.value || '—';
+                totalReadings = records.length;
             }
-        } else {
-            statLast.textContent = '—';
-        }
-    }
 
-    function escapeHtml(str) {
-        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
+            statTotal.textContent = totalReadings;
+            statSession.textContent = sessionCount;
 
-    function addRecord(value) {
-        const now  = new Date();
-        const date = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-        const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-        
-        if (currentMode === 'kadar_air') {
-            kadarAirBuffer.push(value.trim());
-            if (kadarAirBuffer.length === 1) {
-                records.push({ date, time, value1: kadarAirBuffer[0], value2: '', value3: '' });
-            } else if (kadarAirBuffer.length === 2) {
-                records[records.length - 1].value2 = kadarAirBuffer[1];
-            } else if (kadarAirBuffer.length === 3) {
-                records[records.length - 1].value3 = kadarAirBuffer[2];
-                kadarAirBuffer = [];
-            }
-        } else {
-            records.push({ date, time, value: value.trim() });
-        }
-        
-        sessionCount++;
-        saveRecords();
-        renderTable();
-    }
-
-    function pad(n) { return String(n).padStart(2, '0'); }
-
-    // ─── Export Excel (.xlsx via SheetJS) ────────────────────────
-    exportBtn.addEventListener('click', exportToExcel);
-
-    function exportToExcel() {
-        if (records.length === 0) {
-            alert('Tidak ada data untuk diekspor.');
-            return;
-        }
-
-        if (typeof XLSX === 'undefined') {
-            alert('Library SheetJS belum dimuat. Periksa koneksi internet.');
-            return;
-        }
-
-        // ── 1. Siapkan data sebagai array of arrays ──────────────
-        let header, dataRows;
-        if (currentMode === 'kadar_air') {
-            header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2', 'Hasil 3'];
-            dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value1 || '', r.value2 || '', r.value3 || '']);
-        } else {
-            header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
-            dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value || '']);
-        }
-        const sheetData = [header, ...dataRows];
-
-        // ── 2. Buat worksheet dari array of arrays ───────────────
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-
-        // ── 3. Lebar kolom otomatis ──────────────────────────────
-        const colWidths = header.map((h, colIdx) => {
-            const maxLen = sheetData.reduce((max, row) => {
-                const val = row[colIdx] !== undefined ? String(row[colIdx]) : '';
-                return Math.max(max, val.length);
-            }, h.length);
-            return { wch: Math.min(maxLen + 4, 50) };
-        });
-        ws['!cols'] = colWidths;
-
-        // ── 4. Style header (tebal + background) ─────────────────
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let C = range.s.c; C <= range.e.c; C++) {
-            const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
-            if (!ws[cellAddr]) continue;
-            ws[cellAddr].s = {
-                font:      { bold: true, color: { rgb: 'FFFFFF' } },
-                fill:      { fgColor: { rgb: '667EEA' } },
-                alignment: { horizontal: 'center', vertical: 'center' },
-                border: {
-                    top:    { style: 'thin', color: { rgb: 'AAAAAA' } },
-                    bottom: { style: 'thin', color: { rgb: 'AAAAAA' } },
-                    left:   { style: 'thin', color: { rgb: 'AAAAAA' } },
-                    right:  { style: 'thin', color: { rgb: 'AAAAAA' } }
+            if (records.length > 0) {
+                const last = records[records.length - 1];
+                if (currentMode === 'kadar_air') {
+                    statLast.textContent = last.value3 || last.value2 || last.value1 || '—';
+                } else {
+                    statLast.textContent = last.value || '—';
                 }
-            };
+            } else {
+                statLast.textContent = '—';
+            }
         }
 
-        // ── 5. Border untuk semua sel data ───────────────────────
-        for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function addRecord(value) {
+            const now = new Date();
+            const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+            if (currentMode === 'kadar_air') {
+                kadarAirBuffer.push(value.trim());
+                if (kadarAirBuffer.length === 1) {
+                    records.push({ date, time, value1: kadarAirBuffer[0], value2: '', value3: '' });
+                } else if (kadarAirBuffer.length === 2) {
+                    records[records.length - 1].value2 = kadarAirBuffer[1];
+                } else if (kadarAirBuffer.length === 3) {
+                    records[records.length - 1].value3 = kadarAirBuffer[2];
+                    kadarAirBuffer = [];
+                }
+            } else {
+                records.push({ date, time, value: value.trim() });
+            }
+
+            sessionCount++;
+            saveRecords();
+            renderTable();
+        }
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+
+        // ─── Export Excel (.xlsx via SheetJS) ────────────────────────
+        exportBtn.addEventListener('click', exportToExcel);
+
+        function exportToExcel() {
+            if (records.length === 0) {
+                alert('Tidak ada data untuk diekspor.');
+                return;
+            }
+
+            if (typeof XLSX === 'undefined') {
+                alert('Library SheetJS belum dimuat. Periksa koneksi internet.');
+                return;
+            }
+
+            // ── 1. Siapkan data sebagai array of arrays ──────────────
+            let header, dataRows;
+            if (currentMode === 'kadar_air') {
+                header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2', 'Hasil 3'];
+                dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value1 || '', r.value2 || '', r.value3 || '']);
+            } else {
+                header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
+                dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value || '']);
+            }
+            const sheetData = [header, ...dataRows];
+
+            // ── 2. Buat worksheet dari array of arrays ───────────────
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+            // ── 3. Lebar kolom otomatis ──────────────────────────────
+            const colWidths = header.map((h, colIdx) => {
+                const maxLen = sheetData.reduce((max, row) => {
+                    const val = row[colIdx] !== undefined ? String(row[colIdx]) : '';
+                    return Math.max(max, val.length);
+                }, h.length);
+                return { wch: Math.min(maxLen + 4, 50) };
+            });
+            ws['!cols'] = colWidths;
+
+            // ── 4. Style header (tebal + background) ─────────────────
+            const range = XLSX.utils.decode_range(ws['!ref']);
             for (let C = range.s.c; C <= range.e.c; C++) {
-                const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
                 if (!ws[cellAddr]) continue;
                 ws[cellAddr].s = {
+                    font: { bold: true, color: { rgb: 'FFFFFF' } },
+                    fill: { fgColor: { rgb: '667EEA' } },
+                    alignment: { horizontal: 'center', vertical: 'center' },
                     border: {
-                        top:    { style: 'thin', color: { rgb: 'DDDDDD' } },
-                        bottom: { style: 'thin', color: { rgb: 'DDDDDD' } },
-                        left:   { style: 'thin', color: { rgb: 'DDDDDD' } },
-                        right:  { style: 'thin', color: { rgb: 'DDDDDD' } }
+                        top: { style: 'thin', color: { rgb: 'AAAAAA' } },
+                        bottom: { style: 'thin', color: { rgb: 'AAAAAA' } },
+                        left: { style: 'thin', color: { rgb: 'AAAAAA' } },
+                        right: { style: 'thin', color: { rgb: 'AAAAAA' } }
                     }
                 };
             }
+
+            // ── 5. Border untuk semua sel data ───────────────────────
+            for (let R = range.s.r + 1; R <= range.e.r; R++) {
+                for (let C = range.s.c; C <= range.e.c; C++) {
+                    const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellAddr]) continue;
+                    ws[cellAddr].s = {
+                        border: {
+                            top: { style: 'thin', color: { rgb: 'DDDDDD' } },
+                            bottom: { style: 'thin', color: { rgb: 'DDDDDD' } },
+                            left: { style: 'thin', color: { rgb: 'DDDDDD' } },
+                            right: { style: 'thin', color: { rgb: 'DDDDDD' } }
+                        }
+                    };
+                }
+            }
+
+            // ── 6. Buat workbook dan tambahkan sheet ─────────────────
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Data Timbangan');
+
+            // ── 7. Download sebagai .xlsx ────────────────────────────
+            const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            XLSX.writeFile(wb, `data_timbangan_${ts}.xlsx`, { bookType: 'xlsx', cellStyles: true });
+
+            addLog(`✅ Export XLSX berhasil: ${records.length} baris`, 'inf');
         }
 
-        // ── 6. Buat workbook dan tambahkan sheet ─────────────────
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Data Timbangan');
+        // ─── Clear Data ───────────────────────────────────────────────
+        clearDataBtn.addEventListener('click', () => {
+            if (!confirm(`Hapus semua ${records.length} data? Tindakan ini tidak dapat dibatalkan.`)) return;
+            records = [];
+            sessionCount = 0;
+            kadarAirBuffer = [];
+            saveRecords();
+            renderTable();
+            addLog('🗑️ Semua data telah dihapus', 'inf');
+        });
 
-        // ── 7. Download sebagai .xlsx ────────────────────────────
-        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        XLSX.writeFile(wb, `data_timbangan_${ts}.xlsx`, { bookType: 'xlsx', cellStyles: true });
+        // ─── Connection ───────────────────────────────────────────────
+        function updateStatus(connected) {
+            statusBar.className = 'status-bar ' + (connected ? 'connected' : 'disconnected');
+            statusText.textContent = connected ? 'Terhubung' : 'Tidak Terhubung';
+            connectBtn.disabled = connected;
+            disconnectBtn.disabled = !connected;
+            baudrateSelect.disabled = connected;
+        }
 
-        addLog(`✅ Export XLSX berhasil: ${records.length} baris`, 'inf');
-    }
+        connectBtn.addEventListener('click', connectSerial);
+        disconnectBtn.addEventListener('click', disconnectSerial);
 
-    // ─── Clear Data ───────────────────────────────────────────────
-    clearDataBtn.addEventListener('click', () => {
-        if (!confirm(`Hapus semua ${records.length} data? Tindakan ini tidak dapat dibatalkan.`)) return;
-        records = [];
-        sessionCount = 0;
-        kadarAirBuffer = [];
-        saveRecords();
-        renderTable();
-        addLog('🗑️ Semua data telah dihapus', 'inf');
-    });
-
-    // ─── Queue / Spreadsheet ──────────────────────────────────────
-    function updateQueueDisplay() {
-        queueCount.textContent = dataQueue.length;
-        queueBadge.style.display = dataQueue.length > 0 ? 'inline-block' : 'none';
-    }
-
-    function formatDT(d) {
-        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
-
-    async function sendToSpreadsheet(data) {
-        const payload = { timestamp: formatDT(new Date()), data };
-        dataQueue.push(payload);
-        updateQueueDisplay();
-        if (!isSending) processQueue();
-    }
-
-    async function processQueue() {
-        if (dataQueue.length === 0) { isSending = false; updateQueueDisplay(); return; }
-        isSending = true;
-        const payload = dataQueue[0];
-        try {
-            const resp = await fetch(SPREADSHEET_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
+        if (dummyBtn) {
+            dummyBtn.addEventListener('click', () => {
+                const randomWeight = (Math.random() * 50 + 10).toFixed(2) + ' kg';
+                addLog(`RX (Dummy): ${randomWeight}`, 'rx');
+                addRecord(randomWeight);
+                // Tidak mengirim ke spreadsheet karena ini data dummy untuk testing
             });
-            dataQueue.shift();
-            sendAttempts = 0;
-            updateQueueDisplay();
-            addLog(`📊 Terkirim ke spreadsheet (Queue: ${dataQueue.length})`, 'inf');
-            setTimeout(() => processQueue(), SEND_DELAY);
-        } catch (e) {
-            sendAttempts++;
-            if (sendAttempts >= MAX_RETRIES) {
-                addLog(`❌ Gagal kirim setelah ${MAX_RETRIES}x`, 'inf');
-                dataQueue.shift(); sendAttempts = 0; updateQueueDisplay();
-                setTimeout(() => processQueue(), SEND_DELAY);
-            } else {
-                addLog(`⚠️ Retry ${sendAttempts}/${MAX_RETRIES}`, 'inf');
-                setTimeout(() => processQueue(), RETRY_DELAY);
+        }
+
+        async function connectSerial() {
+            try {
+                const baudRate = parseInt(baudrateSelect.value);
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+
+                try {
+                    if (typeof port.setSignals === 'function') {
+                        await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+                        addLog('ℹ️ DTR/RTS diaktifkan', 'inf');
+                    }
+                } catch (e) { addLog(`⚠️ DTR/RTS: ${e?.message ?? e}`, 'inf'); }
+
+                addLog(`✅ Terhubung @ ${baudRate} bps`, 'inf');
+
+                const dec = new TextDecoderStream();
+                readableStreamClosed = port.readable.pipeTo(dec.writable).catch(() => { });
+                reader = dec.readable.getReader();
+
+                const enc = new TextEncoderStream();
+                writableStreamClosed = enc.readable.pipeTo(port.writable).catch(() => { });
+                writer = enc.writable.getWriter();
+
+                updateStatus(true);
+                keepReading = true;
+                rxBuffer = '';
+                rxLastByteAt = 0;
+                lastRxEmitAt = Date.now();
+
+                if (rxNoDataTimer) clearTimeout(rxNoDataTimer);
+                rxNoDataTimer = setTimeout(() => {
+                    if (keepReading && rxLastByteAt === 0)
+                        addLog('⚠️ Tidak ada data RX dalam 5 detik. Cek baudrate/kabel.', 'inf');
+                }, 5000);
+
+                addLog('ℹ️ Membaca data serial...', 'inf');
+                readLoop();
+            } catch (e) {
+                addLog(`❌ ${e.message}`, 'inf');
             }
         }
-    }
 
-    // ─── Connection ───────────────────────────────────────────────
-    function updateStatus(connected) {
-        statusBar.className = 'status-bar ' + (connected ? 'connected' : 'disconnected');
-        statusText.textContent = connected ? 'Terhubung' : 'Tidak Terhubung';
-        connectBtn.disabled    = connected;
-        disconnectBtn.disabled = !connected;
-        baudrateSelect.disabled = connected;
-    }
+        async function readLoop() {
+            while (port.readable && keepReading) {
+                try {
+                    const { value, done } = await reader.read();
+                    if (done) { addLog('⚠️ Reader selesai', 'inf'); break; }
+                    if (!value) continue;
 
-    connectBtn.addEventListener('click', connectSerial);
-    disconnectBtn.addEventListener('click', disconnectSerial);
-    
-    if (dummyBtn) {
-        dummyBtn.addEventListener('click', () => {
-            const randomWeight = (Math.random() * 50 + 10).toFixed(2) + ' kg';
-            addLog(`RX (Dummy): ${randomWeight}`, 'rx');
-            addRecord(randomWeight);
-            // Tidak mengirim ke spreadsheet karena ini data dummy untuk testing
-        });
-    }
+                    rxLastByteAt = Date.now();
+                    rxBuffer += value;
 
-    async function connectSerial() {
-        try {
-            const baudRate = parseInt(baudrateSelect.value);
-            port = await navigator.serial.requestPort();
-            await port.open({ baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+                    const now = Date.now();
+                    const emitBySize = rxBuffer.length >= RX_MAX_BUFFER_LEN;
+                    const emitByTime = now - lastRxEmitAt >= RX_MAX_EMIT_INTERVAL;
 
-            try {
-                if (typeof port.setSignals === 'function') {
-                    await port.setSignals({ dataTerminalReady: true, requestToSend: true });
-                    addLog('ℹ️ DTR/RTS diaktifkan', 'inf');
-                }
-            } catch(e) { addLog(`⚠️ DTR/RTS: ${e?.message ?? e}`, 'inf'); }
-
-            addLog(`✅ Terhubung @ ${baudRate} bps`, 'inf');
-
-            const dec = new TextDecoderStream();
-            readableStreamClosed = port.readable.pipeTo(dec.writable).catch(() => {});
-            reader = dec.readable.getReader();
-
-            const enc = new TextEncoderStream();
-            writableStreamClosed = enc.readable.pipeTo(port.writable).catch(() => {});
-            writer = enc.writable.getWriter();
-
-            updateStatus(true);
-            keepReading  = true;
-            rxBuffer     = '';
-            rxLastByteAt = 0;
-            lastRxEmitAt = Date.now();
-
-            if (rxNoDataTimer) clearTimeout(rxNoDataTimer);
-            rxNoDataTimer = setTimeout(() => {
-                if (keepReading && rxLastByteAt === 0)
-                    addLog('⚠️ Tidak ada data RX dalam 5 detik. Cek baudrate/kabel.', 'inf');
-            }, 5000);
-
-            addLog('ℹ️ Membaca data serial...', 'inf');
-            readLoop();
-        } catch(e) {
-            addLog(`❌ ${e.message}`, 'inf');
-        }
-    }
-
-    async function readLoop() {
-        while (port.readable && keepReading) {
-            try {
-                const { value, done } = await reader.read();
-                if (done) { addLog('⚠️ Reader selesai', 'inf'); break; }
-                if (!value) continue;
-
-                rxLastByteAt = Date.now();
-                rxBuffer += value;
-
-                const now = Date.now();
-                const emitBySize = rxBuffer.length >= RX_MAX_BUFFER_LEN;
-                const emitByTime = now - lastRxEmitAt >= RX_MAX_EMIT_INTERVAL;
-
-                if (rxFlushTimer) clearTimeout(rxFlushTimer);
-                rxFlushTimer = setTimeout(() => {
-                    const line = rxBuffer.trim();
-                    rxBuffer = '';
-                    if (!line) return;
-                    lastRxEmitAt = Date.now();
-                    addLog(`RX: ${line}`, 'rx');
-                    addRecord(line);
-                    sendToSpreadsheet(line).catch(() => {});
-                }, RX_FLUSH_DELAY);
-
-                const parts = rxBuffer.split(/\r\n|\n|\r/);
-                rxBuffer = parts.pop() ?? '';
-
-                for (const raw of parts) {
-                    const line = raw.trim();
-                    if (!line) continue;
-                    addLog(`RX: ${line}`, 'rx');
-                    addRecord(line);
-                    sendToSpreadsheet(line).catch(() => {});
-                    lastRxEmitAt = now;
-                }
-
-                if ((emitBySize || emitByTime) && rxBuffer) {
-                    const line = rxBuffer.trim();
-                    rxBuffer = '';
-                    if (line) {
-                        lastRxEmitAt = now;
+                    if (rxFlushTimer) clearTimeout(rxFlushTimer);
+                    rxFlushTimer = setTimeout(() => {
+                        const line = rxBuffer.trim();
+                        rxBuffer = '';
+                        if (!line) return;
+                        lastRxEmitAt = Date.now();
                         addLog(`RX: ${line}`, 'rx');
                         addRecord(line);
-                        sendToSpreadsheet(line).catch(() => {});
+                    }, RX_FLUSH_DELAY);
+
+                    const parts = rxBuffer.split(/\r\n|\n|\r/);
+                    rxBuffer = parts.pop() ?? '';
+
+                    for (const raw of parts) {
+                        const line = raw.trim();
+                        if (!line) continue;
+                        addLog(`RX: ${line}`, 'rx');
+                        addRecord(line);
+                        lastRxEmitAt = now;
                     }
+
+                    if ((emitBySize || emitByTime) && rxBuffer) {
+                        const line = rxBuffer.trim();
+                        rxBuffer = '';
+                        if (line) {
+                            lastRxEmitAt = now;
+                            addLog(`RX: ${line}`, 'rx');
+                            addRecord(line);
+                        }
+                    }
+                } catch (e) {
+                    addLog(`❌ Error baca: ${e.message}`, 'inf');
+                    break;
                 }
-            } catch(e) {
-                addLog(`❌ Error baca: ${e.message}`, 'inf');
-                break;
             }
         }
-    }
 
-    async function disconnectSerial() {
-        try {
-            keepReading = false;
+        async function disconnectSerial() {
+            try {
+                keepReading = false;
 
-            // Bersihkan timer terlebih dahulu
-            if (rxFlushTimer)  { clearTimeout(rxFlushTimer);  rxFlushTimer  = undefined; }
-            if (rxNoDataTimer) { clearTimeout(rxNoDataTimer); rxNoDataTimer = undefined; }
+                // Bersihkan timer terlebih dahulu
+                if (rxFlushTimer) { clearTimeout(rxFlushTimer); rxFlushTimer = undefined; }
+                if (rxNoDataTimer) { clearTimeout(rxNoDataTimer); rxNoDataTimer = undefined; }
 
-            // 1. Cancel reader — ini akan membuat read() di readLoop() throw/done
-            //    dan readLoop akan keluar dari while-loop secara natural.
-            if (reader) {
-                try { await reader.cancel(); } catch (_) {}
-                if (readableStreamClosed) {
-                    await readableStreamClosed.catch(() => {});
+                // 1. Cancel reader — ini akan membuat read() di readLoop() throw/done
+                //    dan readLoop akan keluar dari while-loop secara natural.
+                if (reader) {
+                    try { await reader.cancel(); } catch (_) { }
+                    if (readableStreamClosed) {
+                        await readableStreamClosed.catch(() => { });
+                    }
+                    reader = null;
                 }
-                reader = null;
-            }
 
-            // 2. Tutup writer
-            if (writer) {
-                try { await writer.close(); } catch (_) {}
-                if (writableStreamClosed) {
-                    await writableStreamClosed.catch(() => {});
+                // 2. Tutup writer
+                if (writer) {
+                    try { await writer.close(); } catch (_) { }
+                    if (writableStreamClosed) {
+                        await writableStreamClosed.catch(() => { });
+                    }
+                    writer = null;
                 }
-                writer = null;
-            }
 
-            // 3. Tutup port setelah semua stream dilepas
-            if (port) {
-                try { await port.close(); } catch (_) {}
-                port = null;
-            }
+                // 3. Tutup port setelah semua stream dilepas
+                if (port) {
+                    try { await port.close(); } catch (_) { }
+                    port = null;
+                }
 
-            addLog('🔌 Koneksi diputus', 'inf');
-            updateStatus(false);
-        } catch(e) {
-            addLog(`❌ Error putus: ${e.message}`, 'inf');
-            updateStatus(false);
+                addLog('🔌 Koneksi diputus', 'inf');
+                updateStatus(false);
+            } catch (e) {
+                addLog(`❌ Error putus: ${e.message}`, 'inf');
+                updateStatus(false);
+            }
         }
-    }
 
-    // ─── Init ─────────────────────────────────────────────────────
-    loadRecords();
-    renderTable();
-    addLog('🚀 Monitor Timbangan siap digunakan', 'inf');
-    addLog('📌 Klik "Hubungkan" untuk memilih port serial', 'inf');
-</script>
+        // ─── Init ─────────────────────────────────────────────────────
+        loadRecords();
+        renderTable();
+        addLog('🚀 Monitor Timbangan siap digunakan', 'inf');
+        addLog('📌 Klik "Hubungkan" untuk memilih port serial', 'inf');
+    </script>
 </body>
+
 </html>
