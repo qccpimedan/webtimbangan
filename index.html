@@ -437,7 +437,7 @@
                     </div>
                     <button id="connectBtn" class="btn btn-primary">🔌 Hubungkan</button>
                     <button id="disconnectBtn" class="btn btn-danger" disabled>⛔ Putuskan</button>
-                    <!-- <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button> -->
+                    <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button>
                     <div id="statusBar" class="status-bar disconnected">
                         <span class="status-dot"></span>
                         <span id="statusText">Tidak Terhubung</span>
@@ -538,8 +538,7 @@
                 records = raw ? JSON.parse(raw) : [];
                 if (currentMode === 'kadar_air' && records.length > 0) {
                     const last = records[records.length - 1];
-                    if (last.value1 && !last.value2 && !last.value3) kadarAirBuffer = [last.value1];
-                    else if (last.value1 && last.value2 && !last.value3) kadarAirBuffer = [last.value1, last.value2];
+                    if (last.value1 && !last.value2) kadarAirBuffer = [last.value1];
                     else kadarAirBuffer = [];
                 } else {
                     kadarAirBuffer = [];
@@ -599,7 +598,6 @@
                     <th>Waktu</th>
                     <th>Hasil 1</th>
                     <th>Hasil 2</th>
-                    <th>Hasil 3</th>
                 </tr>
             `;
             } else {
@@ -640,7 +638,7 @@
 
             if (records.length === 0) {
                 emptyRow.style.display = '';
-                emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 6 : 4;
+                emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 5 : 4;
             } else {
                 emptyRow.style.display = 'none';
                 records.slice().reverse().forEach((rec, i) => {
@@ -653,7 +651,6 @@
                         <td class="time-col">${rec.time}</td>
                         <td class="data-col">${escapeHtml(rec.value1 || '')}</td>
                         <td class="data-col">${escapeHtml(rec.value2 || '')}</td>
-                        <td class="data-col">${escapeHtml(rec.value3 || '')}</td>
                     `;
                     } else {
                         tr.innerHTML = `
@@ -672,7 +669,6 @@
                 records.forEach(r => {
                     if (r.value1) totalReadings++;
                     if (r.value2) totalReadings++;
-                    if (r.value3) totalReadings++;
                 });
             } else {
                 totalReadings = records.length;
@@ -684,7 +680,7 @@
             if (records.length > 0) {
                 const last = records[records.length - 1];
                 if (currentMode === 'kadar_air') {
-                    statLast.textContent = last.value3 || last.value2 || last.value1 || '—';
+                    statLast.textContent = last.value2 || last.value1 || '—';
                 } else {
                     statLast.textContent = last.value || '—';
                 }
@@ -705,11 +701,9 @@
             if (currentMode === 'kadar_air') {
                 kadarAirBuffer.push(value.trim());
                 if (kadarAirBuffer.length === 1) {
-                    records.push({ date, time, value1: kadarAirBuffer[0], value2: '', value3: '' });
+                    records.push({ date, time, value1: kadarAirBuffer[0], value2: '' });
                 } else if (kadarAirBuffer.length === 2) {
                     records[records.length - 1].value2 = kadarAirBuffer[1];
-                } else if (kadarAirBuffer.length === 3) {
-                    records[records.length - 1].value3 = kadarAirBuffer[2];
                     kadarAirBuffer = [];
                 }
             } else {
@@ -740,8 +734,8 @@
             // ── 1. Siapkan data sebagai array of arrays ──────────────
             let header, dataRows;
             if (currentMode === 'kadar_air') {
-                header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2', 'Hasil 3'];
-                dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value1 || '', r.value2 || '', r.value3 || '']);
+                header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2'];
+                dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value1 || '', r.value2 || '']);
             } else {
                 header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
                 dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value || '']);
