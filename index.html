@@ -936,7 +936,7 @@
                     rxFlushTimer = setTimeout(() => {
                         const line = rxBuffer.trim();
                         rxBuffer = '';
-                        if (!line) return;
+                        if (!line || line === '-') return;
                         lastRxEmitAt = Date.now();
                         addLog(`RX: ${line}`, 'rx');
                         addRecord(line);
@@ -947,7 +947,7 @@
 
                     for (const raw of parts) {
                         const line = raw.trim();
-                        if (!line) continue;
+                        if (!line || line === '-') continue;
                         addLog(`RX: ${line}`, 'rx');
                         addRecord(line);
                         lastRxEmitAt = now;
@@ -956,7 +956,7 @@
                     if ((emitBySize || emitByTime) && rxBuffer) {
                         const line = rxBuffer.trim();
                         rxBuffer = '';
-                        if (line) {
+                        if (line && line !== '-') {
                             lastRxEmitAt = now;
                             addLog(`RX: ${line}`, 'rx');
                             addRecord(line);
