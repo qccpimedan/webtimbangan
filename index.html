@@ -515,6 +515,8 @@
         const RX_FLUSH_DELAY = 200;
         const RX_MAX_EMIT_INTERVAL = 500;
         const RX_MAX_BUFFER_LEN = 256;
+        const RX_WATCHDOG_TIMEOUT = 5000;        // anggap "tidak ada data" jika diam lebih dari ini (ms)
+        const RX_WATCHDOG_CHECK_INTERVAL = 1000; // seberapa sering watchdog mengecek (ms)
 
         // ─── State ────────────────────────────────────────────────────
         let port, reader, writer;
@@ -619,6 +621,33 @@
         if (!('serial' in navigator)) {
             warningBox.style.display = 'block';
             connectBtn.disabled = true;
+        }
+
+        // ─── Deteksi perangkat USB-Serial dicabut/hilang secara fisik ──
+        if ('serial' in navigator) {
+            navigator.serial.addEventListener('disconnect', (e) => {
+                addLog('🔌 Perangkat serial terputus dari sistem (kabel/adapter dicabut atau mati)', 'inf');
+                handleUnexpectedDisconnect();
+            });
+        }
+
+        // Dipanggil kapan pun koneksi terputus di luar dugaan (bukan karena tombol "Putuskan")
+        async function handleUnexpectedDisconnect() {
+            if (!keepReading && !port) return; // sudah dalam keadaan disconnect, tidak perlu diulang
+            keepReading = false;
+
+            if (rxFlushTimer) { clearTimeout(rxFlushTimer); rxFlushTimer = undefined; }
+            if (rxNoDataTimer) { clearInterval(rxNoDataTimer); rxNoDataTimer = undefined; }
+
+            try { if (reader) await reader.cancel().catch(() => { }); } catch (_) { }
+            try { if (writer) await writer.close().catch(() => { }); } catch (_) { }
+            try { if (port) await port.close().catch(() => { }); } catch (_) { }
+
+            reader = null;
+            writer = null;
+            port = null;
+
+            updateStatus(false);
         }
 
         // ─── Terminal ─────────────────────────────────────────────────
@@ -861,11 +890,25 @@
                 rxLastByteAt = 0;
                 lastRxEmitAt = Date.now();
 
-                if (rxNoDataTimer) clearTimeout(rxNoDataTimer);
-                rxNoDataTimer = setTimeout(() => {
-                    if (keepReading && rxLastByteAt === 0)
-                        addLog('⚠️ Tidak ada data RX dalam 5 detik. Cek baudrate/kabel.', 'inf');
-                }, 5000);
+                // ── Watchdog RX: dipantau TERUS-MENERUS selama koneksi aktif ──
+                // (sebelumnya hanya cek sekali di awal via setTimeout, sehingga
+                //  kalau data sempat masuk lalu berhenti di tengah jalan, tidak
+                //  ada peringatan sama sekali. Sekarang pakai setInterval + flag
+                //  agar warning tetap muncul kapan pun data berhenti mengalir.)
+                let rxWasWarned = false;
+                if (rxNoDataTimer) clearInterval(rxNoDataTimer);
+                rxNoDataTimer = setInterval(() => {
+                    if (!keepReading) return;
+                    const silentMs = Date.now() - (rxLastByteAt || lastRxEmitAt);
+                    if (silentMs >= RX_WATCHDOG_TIMEOUT) {
+                        if (!rxWasWarned) {
+                            addLog(`⚠️ Tidak ada data RX selama ${Math.round(silentMs / 1000)} detik. Cek kabel DB9 / solderan / adapter USB-Serial.`, 'inf');
+                            rxWasWarned = true;
+                        }
+                    } else {
+                        rxWasWarned = false;
+                    }
+                }, RX_WATCHDOG_CHECK_INTERVAL);
 
                 addLog('ℹ️ Membaca data serial...', 'inf');
                 readLoop();
@@ -875,10 +918,11 @@
         }
 
         async function readLoop() {
+            let exitedUnexpectedly = false;
             while (port.readable && keepReading) {
                 try {
                     const { value, done } = await reader.read();
-                    if (done) { addLog('⚠️ Reader selesai', 'inf'); break; }
+                    if (done) { addLog('⚠️ Reader selesai', 'inf'); exitedUnexpectedly = keepReading; break; }
                     if (!value) continue;
 
                     rxLastByteAt = Date.now();
@@ -920,8 +964,21 @@
                     }
                 } catch (e) {
                     addLog(`❌ Error baca: ${e.message}`, 'inf');
+                    exitedUnexpectedly = keepReading;
                     break;
                 }
+            }
+
+            // ── PENTING: sebelumnya loop ini bisa keluar (reader "done" atau
+            // error, misalnya kabel/adapter USB-Serial terlepas) TANPA pernah
+            // memanggil updateStatus(false). Akibatnya status bar tetap
+            // menampilkan "Terhubung" selamanya walau data sudah berhenti total.
+            // Sekarang, kalau loop berhenti bukan karena user klik "Putuskan"
+            // (keepReading masih true saat itu terjadi), kita anggap ini
+            // disconnect tak terduga dan bersihkan status secara eksplisit.
+            if (exitedUnexpectedly) {
+                addLog('🔌 Koneksi serial terputus tak terduga (reader berhenti/error).', 'inf');
+                handleUnexpectedDisconnect();
             }
         }
 
@@ -931,7 +988,7 @@
 
                 // Bersihkan timer terlebih dahulu
                 if (rxFlushTimer) { clearTimeout(rxFlushTimer); rxFlushTimer = undefined; }
-                if (rxNoDataTimer) { clearTimeout(rxNoDataTimer); rxNoDataTimer = undefined; }
+                if (rxNoDataTimer) { clearInterval(rxNoDataTimer); rxNoDataTimer = undefined; }
 
                 // 1. Cancel reader — ini akan membuat read() di readLoop() throw/done
                 //    dan readLoop akan keluar dari while-loop secara natural.
