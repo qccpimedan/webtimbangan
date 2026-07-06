@@ -760,14 +760,22 @@
                 return;
             }
 
+            // Fungsi pembantu untuk membersihkan angka (menghapus 'g', spasi, dsb)
+            function parseNumeric(val) {
+                if (!val) return '';
+                const numStr = String(val).replace(/[^\d.-]/g, '');
+                const num = parseFloat(numStr);
+                return isNaN(num) ? val : num;
+            }
+
             // ── 1. Siapkan data sebagai array of arrays ──────────────
             let header, dataRows;
             if (currentMode === 'kadar_air') {
                 header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2'];
-                dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value1 || '', r.value2 || '']);
+                dataRows = records.map((r, i) => [i + 1, r.date, r.time, parseNumeric(r.value1), parseNumeric(r.value2)]);
             } else {
                 header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
-                dataRows = records.map((r, i) => [i + 1, r.date, r.time, r.value || '']);
+                dataRows = records.map((r, i) => [i + 1, r.date, r.time, parseNumeric(r.value)]);
             }
             const sheetData = [header, ...dataRows];
 
@@ -802,11 +810,18 @@
                 };
             }
 
-            // ── 5. Border untuk semua sel data ───────────────────────
+            // ── 5. Border dan Format untuk semua sel data ────────────
             for (let R = range.s.r + 1; R <= range.e.r; R++) {
                 for (let C = range.s.c; C <= range.e.c; C++) {
                     const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
                     if (!ws[cellAddr]) continue;
+                    
+                    // Jika ini kolom hasil pembacaan (kolom ke-3 atau ke-4) dan tipe angkanya number
+                    if (C >= 3 && typeof ws[cellAddr].v === 'number') {
+                        // Menggunakan format accounting/currency sederhana (contoh: 1,000.00)
+                        ws[cellAddr].z = '#,##0.00##'; 
+                    }
+
                     ws[cellAddr].s = {
                         border: {
                             top: { style: 'thin', color: { rgb: 'DDDDDD' } },
