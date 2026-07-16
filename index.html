@@ -449,7 +449,7 @@
                     </div>
                     <button id="connectBtn" class="btn btn-primary">🔌 Hubungkan</button>
                     <button id="disconnectBtn" class="btn btn-danger" disabled>⛔ Putuskan</button>
-                    <!-- <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button> -->
+                    <button id="dummyBtn" class="btn btn-warning">🧪 Test Dummy Data</button>
                     <div id="statusBar" class="status-bar disconnected">
                         <span class="status-dot"></span>
                         <span id="statusText">Tidak Terhubung</span>
@@ -709,7 +709,7 @@
             const n2 = parseFloat(String(v2).replace(/[^\d.-]/g, ''));
             const n3 = parseFloat(String(v3).replace(/[^\d.-]/g, ''));
             if (isNaN(n1) || isNaN(n2) || isNaN(n3) || n2 === 0) return 0;
-            const result = ((n1 - n3) / n2) * 100;
+            const result = (((n1 + n2) - n3) / n2) * 100;
             return result.toFixed(2);
         }
 
