@@ -346,9 +346,21 @@
             border-bottom: none;
         }
 
+        tbody tr.waiting-hasil3 {
+            background: rgba(255, 193, 7, 0.15) !important;
+            border-left: 4px solid #ffc107;
+        }
+
         tbody td {
             padding: 11px 16px;
             color: #d0d8e0;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 11px;
+            line-height: 1.2;
+            border-radius: 4px;
         }
 
         tbody td.no-col {
@@ -530,6 +542,7 @@
         // ─── Mode State ───────────────────────────────────────────────
         let currentMode = localStorage.getItem('timbangan_mode') || 'biasa';
         let kadarAirBuffer = [];
+        let targetRecordIdForHasil3 = null;
 
         // ─── Persistent data (localStorage) ──────────────────────────
         let records = [];
@@ -538,6 +551,9 @@
             try {
                 const raw = localStorage.getItem(STORAGE_KEY);
                 records = raw ? JSON.parse(raw) : [];
+                // pastikan setiap record punya id
+                records.forEach((r, i) => { if (!r.id) r.id = Date.now() + i; });
+
                 if (currentMode === 'kadar_air' && records.length > 0) {
                     const last = records[records.length - 1];
                     if (last.value1 && !last.value2) kadarAirBuffer = [last.value1];
@@ -581,6 +597,7 @@
                     records = [];
                     sessionCount = 0;
                     kadarAirBuffer = [];
+                    targetRecordIdForHasil3 = null;
                     saveRecords();
                 }
                 currentMode = e.target.value;
@@ -600,6 +617,9 @@
                     <th>Waktu</th>
                     <th>Hasil 1</th>
                     <th>Hasil 2</th>
+                    <th>Hasil 3</th>
+                    <th>Kadar Air (%)</th>
+                    <th style="width: 100px;">Aksi</th>
                 </tr>
             `;
             } else {
@@ -660,6 +680,39 @@
         }
 
         // ─── Stats + Table ────────────────────────────────────────────
+
+        window.setTargetHasil3 = function (id) {
+            targetRecordIdForHasil3 = id;
+            renderTable();
+            addLog(`⏳ Menunggu data untuk Hasil 3 pada baris terkait...`, 'inf');
+        };
+
+        window.cancelTargetHasil3 = function () {
+            targetRecordIdForHasil3 = null;
+            renderTable();
+            addLog(`❌ Batal menunggu data Hasil 3`, 'inf');
+        };
+
+        function getHasil3ActionHtml(id, value3) {
+            if (id === targetRecordIdForHasil3) {
+                return `<button onclick="cancelTargetHasil3()" class="btn btn-danger btn-sm">Batal</button>`;
+            } else if (!value3) {
+                return `<button onclick="setTargetHasil3(${id})" class="btn btn-primary btn-sm">Ambil Data</button>`;
+            } else {
+                return `<span style="color: #27ae60; font-size: 12px; font-weight: 600;">✓ Selesai</span>`;
+            }
+        }
+
+        function calculateKadarAir(v1, v2, v3) {
+            if (!v1 || !v2 || !v3) return 0;
+            const n1 = parseFloat(String(v1).replace(/[^\d.-]/g, ''));
+            const n2 = parseFloat(String(v2).replace(/[^\d.-]/g, ''));
+            const n3 = parseFloat(String(v3).replace(/[^\d.-]/g, ''));
+            if (isNaN(n1) || isNaN(n2) || isNaN(n3) || n2 === 0) return 0;
+            const result = ((n1 - n3) / n2) * 100;
+            return result.toFixed(2);
+        }
+
         function renderTable() {
             // Remove all rows except emptyRow placeholder
             const rows = dataTableBody.querySelectorAll('tr.data-row');
@@ -667,19 +720,27 @@
 
             if (records.length === 0) {
                 emptyRow.style.display = '';
-                emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 5 : 4;
+                emptyRow.querySelector('td').colSpan = currentMode === 'kadar_air' ? 8 : 4;
             } else {
                 emptyRow.style.display = 'none';
                 records.slice().reverse().forEach((rec, i) => {
                     const tr = document.createElement('tr');
                     tr.className = 'data-row';
+                    if (rec.id === targetRecordIdForHasil3) {
+                        tr.classList.add('waiting-hasil3');
+                    }
+
                     if (currentMode === 'kadar_air') {
+                        const kadarAir = calculateKadarAir(rec.value1, rec.value2, rec.value3);
                         tr.innerHTML = `
                         <td class="no-col">${records.length - i}</td>
                         <td class="time-col">${rec.date}</td>
                         <td class="time-col">${rec.time}</td>
                         <td class="data-col">${escapeHtml(rec.value1 || '')}</td>
                         <td class="data-col">${escapeHtml(rec.value2 || '')}</td>
+                        <td class="data-col">${escapeHtml(rec.value3 || '')}</td>
+                        <td class="data-col">${kadarAir}</td>
+                        <td>${getHasil3ActionHtml(rec.id, rec.value3)}</td>
                     `;
                     } else {
                         tr.innerHTML = `
@@ -726,17 +787,29 @@
             const now = new Date();
             const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
             const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const id = Date.now();
 
             if (currentMode === 'kadar_air') {
-                kadarAirBuffer.push(value.trim());
-                if (kadarAirBuffer.length === 1) {
-                    records.push({ date, time, value1: kadarAirBuffer[0], value2: '' });
-                } else if (kadarAirBuffer.length === 2) {
-                    records[records.length - 1].value2 = kadarAirBuffer[1];
-                    kadarAirBuffer = [];
+                if (targetRecordIdForHasil3 !== null) {
+                    const targetRecord = records.find(r => r.id === targetRecordIdForHasil3);
+                    if (targetRecord) {
+                        targetRecord.value3 = value.trim();
+                        targetRecordIdForHasil3 = null;
+                        addLog(`✅ Hasil 3 berhasil disimpan`, 'inf');
+                    } else {
+                        targetRecordIdForHasil3 = null;
+                    }
+                } else {
+                    kadarAirBuffer.push(value.trim());
+                    if (kadarAirBuffer.length === 1) {
+                        records.push({ id, date, time, value1: kadarAirBuffer[0], value2: '', value3: '' });
+                    } else if (kadarAirBuffer.length === 2) {
+                        records[records.length - 1].value2 = kadarAirBuffer[1];
+                        kadarAirBuffer = [];
+                    }
                 }
             } else {
-                records.push({ date, time, value: value.trim() });
+                records.push({ id, date, time, value: value.trim() });
             }
 
             sessionCount++;
@@ -771,8 +844,11 @@
             // ── 1. Siapkan data sebagai array of arrays ──────────────
             let header, dataRows;
             if (currentMode === 'kadar_air') {
-                header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2'];
-                dataRows = records.map((r, i) => [i + 1, r.date, r.time, parseNumeric(r.value1), parseNumeric(r.value2)]);
+                header = ['No', 'Tanggal', 'Waktu', 'Hasil 1', 'Hasil 2', 'Hasil 3', 'Kadar Air (%)'];
+                dataRows = records.map((r, i) => {
+                    const ka = calculateKadarAir(r.value1, r.value2, r.value3);
+                    return [i + 1, r.date, r.time, parseNumeric(r.value1), parseNumeric(r.value2), parseNumeric(r.value3), parseFloat(ka) || 0];
+                });
             } else {
                 header = ['No', 'Tanggal', 'Waktu', 'Hasil Pembacaan'];
                 dataRows = records.map((r, i) => [i + 1, r.date, r.time, parseNumeric(r.value)]);
@@ -815,11 +891,11 @@
                 for (let C = range.s.c; C <= range.e.c; C++) {
                     const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
                     if (!ws[cellAddr]) continue;
-                    
+
                     // Jika ini kolom hasil pembacaan (kolom ke-3 atau ke-4) dan tipe angkanya number
                     if (C >= 3 && typeof ws[cellAddr].v === 'number') {
                         // Menggunakan format accounting/currency sederhana (contoh: 1,000.00)
-                        ws[cellAddr].z = '#,##0.00##'; 
+                        ws[cellAddr].z = '#,##0.00##';
                     }
 
                     ws[cellAddr].s = {
@@ -850,6 +926,7 @@
             records = [];
             sessionCount = 0;
             kadarAirBuffer = [];
+            targetRecordIdForHasil3 = null;
             saveRecords();
             renderTable();
             addLog('🗑️ Semua data telah dihapus', 'inf');
@@ -932,6 +1009,18 @@
             }
         }
 
+        function sanitizeReading(line) {
+            // Hapus karakter non-ASCII dan control characters (pertahankan angka, huruf, spasi, titik, koma, dsb)
+            // Regex \x20-\x7E menyimpan spasi (32) sampai ~ (126)
+            return String(line).replace(/[^\x20-\x7E]/g, '').trim();
+        }
+
+        function isValidReading(line) {
+            if (!line || line === '-') return false;
+            // Pastikan data yang masuk masuk akal (minimal mengandung angka)
+            return /\d/.test(line);
+        }
+
         async function readLoop() {
             let exitedUnexpectedly = false;
             while (port.readable && keepReading) {
@@ -949,29 +1038,31 @@
 
                     if (rxFlushTimer) clearTimeout(rxFlushTimer);
                     rxFlushTimer = setTimeout(() => {
-                        const line = rxBuffer.trim();
+                        const line = sanitizeReading(rxBuffer);
                         rxBuffer = '';
-                        if (!line || line === '-') return;
-                        lastRxEmitAt = Date.now();
-                        addLog(`RX: ${line}`, 'rx');
-                        addRecord(line);
+                        if (isValidReading(line)) {
+                            lastRxEmitAt = Date.now();
+                            addLog(`RX: ${line}`, 'rx');
+                            addRecord(line);
+                        }
                     }, RX_FLUSH_DELAY);
 
                     const parts = rxBuffer.split(/\r\n|\n|\r/);
                     rxBuffer = parts.pop() ?? '';
 
                     for (const raw of parts) {
-                        const line = raw.trim();
-                        if (!line || line === '-') continue;
-                        addLog(`RX: ${line}`, 'rx');
-                        addRecord(line);
-                        lastRxEmitAt = now;
+                        const line = sanitizeReading(raw);
+                        if (isValidReading(line)) {
+                            addLog(`RX: ${line}`, 'rx');
+                            addRecord(line);
+                            lastRxEmitAt = now;
+                        }
                     }
 
                     if ((emitBySize || emitByTime) && rxBuffer) {
-                        const line = rxBuffer.trim();
+                        const line = sanitizeReading(rxBuffer);
                         rxBuffer = '';
-                        if (line && line !== '-') {
+                        if (isValidReading(line)) {
                             lastRxEmitAt = now;
                             addLog(`RX: ${line}`, 'rx');
                             addRecord(line);
