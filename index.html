@@ -710,7 +710,7 @@
             const n3 = parseFloat(String(v3).replace(/[^\d.-]/g, ''));
             if (isNaN(n1) || isNaN(n2) || isNaN(n3) || n2 === 0) return 0;
             const result = (((n1 + n2) - n3) / n2) * 100;
-            return result.toFixed(2);
+            return result.toFixed(4);
         }
 
         function renderTable() {
